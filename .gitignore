@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+
+# 指数データは同梱しない（再配布しない）。`python3 fetch.py` で各自取得する。
+data/

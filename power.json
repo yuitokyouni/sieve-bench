@@ -1,0 +1,250 @@
+{
+ "config": {
+  "window": 1000,
+  "stride": 250,
+  "n_runs": 200,
+  "seed": 20260802,
+  "n_real_windows": 124,
+  "indices": [
+   "ftse",
+   "gdaxi",
+   "gspc",
+   "hsi",
+   "n225",
+   "sx5e"
+  ],
+  "garch": [
+   0.017388903546261568,
+   0.11593543073134,
+   0.8630902120579003
+  ],
+  "t_df": 2.647938408611851
+ },
+ "power": {
+  "excess_kurtosis": {
+   "gaussian": 1.0,
+   "student_t": 0.8604838709677418,
+   "iid_bootstrap": 0.4408870967741936,
+   "block_bootstrap": 0.22524193548387084,
+   "garch_norm": 0.7457258064516128,
+   "garch_t": 0.8521774193548386
+  },
+  "hill_right": {
+   "gaussian": 0.9089516129032258,
+   "student_t": 0.6441935483870969,
+   "iid_bootstrap": 0.2566935483870967,
+   "block_bootstrap": 0.16758064516129023,
+   "garch_norm": 0.45467741935483863,
+   "garch_t": 0.7333064516129033
+  },
+  "hill_left": {
+   "gaussian": 0.9680645161290322,
+   "student_t": 0.7098387096774192,
+   "iid_bootstrap": 0.23677419354838714,
+   "block_bootstrap": 0.1591129032258065,
+   "garch_norm": 0.532258064516129,
+   "garch_t": 0.7687903225806452
+  },
+  "gain_loss_asymmetry": {
+   "gaussian": 0.6216129032258064,
+   "student_t": 0.030887096774193434,
+   "iid_bootstrap": 0.08056451612903226,
+   "block_bootstrap": 0.14887096774193553,
+   "garch_norm": 0.590241935483871,
+   "garch_t": 0.1314516129032257
+  },
+  "acf_return_1": {
+   "gaussian": 0.3488709677419355,
+   "student_t": 0.31685483870967746,
+   "iid_bootstrap": 0.35491935483870973,
+   "block_bootstrap": 0.13524193548387098,
+   "garch_norm": 0.31741935483870964,
+   "garch_t": 0.3343548387096775
+  },
+  "acf_abs_1": {
+   "gaussian": 0.9390322580645161,
+   "student_t": 0.9427419354838709,
+   "iid_bootstrap": 0.9410483870967743,
+   "block_bootstrap": 0.08887096774193548,
+   "garch_norm": 0.07483870967741924,
+   "garch_t": 0.2184677419354839
+  },
+  "acf_abs_20": {
+   "gaussian": 0.892741935483871,
+   "student_t": 0.8925000000000001,
+   "iid_bootstrap": 0.9029032258064515,
+   "block_bootstrap": 0.883225806451613,
+   "garch_norm": 0.048951612903225916,
+   "garch_t": 0.49451612903225817
+  },
+  "acf_abs_decay": {
+   "gaussian": 0.804516129032258,
+   "student_t": 0.7093548387096775,
+   "iid_bootstrap": 0.8257258064516129,
+   "block_bootstrap": 0.8792741935483872,
+   "garch_norm": 0.36951612903225817,
+   "garch_t": 0.5762096774193548
+  },
+  "ljung_box_sq": {
+   "gaussian": 0.9991935483870968,
+   "student_t": 0.9984677419354839,
+   "iid_bootstrap": 0.9976612903225806,
+   "block_bootstrap": 0.3323387096774193,
+   "garch_norm": 0.09008064516129033,
+   "garch_t": 0.8095161290322581
+  },
+  "aggregational_gaussianity": {
+   "gaussian": 0.6458870967741936,
+   "student_t": 0.9508064516129031,
+   "iid_bootstrap": 0.7032258064516128,
+   "block_bootstrap": 0.041290322580645133,
+   "garch_norm": 0.6357258064516129,
+   "garch_t": 0.8687096774193548
+  },
+  "leverage": {
+   "gaussian": 0.9853225806451613,
+   "student_t": 0.989758064516129,
+   "iid_bootstrap": 0.9865322580645162,
+   "block_bootstrap": 0.3052419354838709,
+   "garch_norm": 0.9669354838709678,
+   "garch_t": 0.9218548387096774
+  },
+  "vol_of_vol": {
+   "gaussian": 1.0,
+   "student_t": 0.4004032258064516,
+   "iid_bootstrap": 0.9095967741935485,
+   "block_bootstrap": 0.013467741935483835,
+   "garch_norm": 0.41185483870967743,
+   "garch_t": 0.45782258064516124
+  },
+  "multiscaling": {
+   "gaussian": 0.6433870967741935,
+   "student_t": 0.8816129032258064,
+   "iid_bootstrap": 0.7004838709677419,
+   "block_bootstrap": 0.0786290322580645,
+   "garch_norm": 0.6212096774193547,
+   "garch_t": 0.6580645161290324
+  }
+ },
+ "auc": {
+  "excess_kurtosis": {
+   "gaussian": 0.0,
+   "student_t": 0.9302419354838709,
+   "iid_bootstrap": 0.7204435483870968,
+   "block_bootstrap": 0.6126209677419354,
+   "garch_norm": 0.1271370967741936,
+   "garch_t": 0.9260887096774193
+  },
+  "hill_right": {
+   "gaussian": 0.9544758064516129,
+   "student_t": 0.17790322580645157,
+   "iid_bootstrap": 0.37165322580645166,
+   "block_bootstrap": 0.4162096774193549,
+   "garch_norm": 0.7273387096774193,
+   "garch_t": 0.13334677419354835
+  },
+  "hill_left": {
+   "gaussian": 0.9840322580645161,
+   "student_t": 0.14508064516129038,
+   "iid_bootstrap": 0.38161290322580643,
+   "block_bootstrap": 0.42044354838709674,
+   "garch_norm": 0.7661290322580645,
+   "garch_t": 0.11560483870967742
+  },
+  "gain_loss_asymmetry": {
+   "gaussian": 0.8108064516129032,
+   "student_t": 0.5154435483870967,
+   "iid_bootstrap": 0.5402822580645161,
+   "block_bootstrap": 0.5744354838709678,
+   "garch_norm": 0.7951209677419355,
+   "garch_t": 0.5657258064516129
+  },
+  "acf_return_1": {
+   "gaussian": 0.6744354838709677,
+   "student_t": 0.6584274193548387,
+   "iid_bootstrap": 0.6774596774193549,
+   "block_bootstrap": 0.4323790322580645,
+   "garch_norm": 0.6587096774193548,
+   "garch_t": 0.6671774193548388
+  },
+  "acf_abs_1": {
+   "gaussian": 0.030483870967741966,
+   "student_t": 0.02862903225806457,
+   "iid_bootstrap": 0.02947580645161285,
+   "block_bootstrap": 0.5444354838709677,
+   "garch_norm": 0.5374193548387096,
+   "garch_t": 0.39076612903225805
+  },
+  "acf_abs_20": {
+   "gaussian": 0.05362903225806448,
+   "student_t": 0.053749999999999964,
+   "iid_bootstrap": 0.048548387096774226,
+   "block_bootstrap": 0.058387096774193514,
+   "garch_norm": 0.47552419354838704,
+   "garch_t": 0.2527419354838709
+  },
+  "acf_abs_decay": {
+   "gaussian": 0.902258064516129,
+   "student_t": 0.8546774193548388,
+   "iid_bootstrap": 0.9128629032258064,
+   "block_bootstrap": 0.0603629032258064,
+   "garch_norm": 0.3152419354838709,
+   "garch_t": 0.2118951612903226
+  },
+  "ljung_box_sq": {
+   "gaussian": 0.00040322580645157924,
+   "student_t": 0.0007661290322580339,
+   "iid_bootstrap": 0.0011693548387097241,
+   "block_bootstrap": 0.33383064516129035,
+   "garch_norm": 0.5450403225806452,
+   "garch_t": 0.09524193548387094
+  },
+  "aggregational_gaussianity": {
+   "gaussian": 0.17705645161290318,
+   "student_t": 0.9754032258064516,
+   "iid_bootstrap": 0.8516129032258064,
+   "block_bootstrap": 0.5206451612903226,
+   "garch_norm": 0.18213709677419354,
+   "garch_t": 0.9343548387096774
+  },
+  "leverage": {
+   "gaussian": 0.9926612903225807,
+   "student_t": 0.9948790322580645,
+   "iid_bootstrap": 0.9932661290322581,
+   "block_bootstrap": 0.6526209677419355,
+   "garch_norm": 0.9834677419354839,
+   "garch_t": 0.9609274193548387
+  },
+  "vol_of_vol": {
+   "gaussian": 0.0,
+   "student_t": 0.2997983870967742,
+   "iid_bootstrap": 0.045201612903225774,
+   "block_bootstrap": 0.4932661290322581,
+   "garch_norm": 0.2940725806451613,
+   "garch_t": 0.7289112903225806
+  },
+  "multiscaling": {
+   "gaussian": 0.17830645161290326,
+   "student_t": 0.9408064516129032,
+   "iid_bootstrap": 0.850241935483871,
+   "block_bootstrap": 0.5393145161290323,
+   "garch_norm": 0.18939516129032263,
+   "garch_t": 0.8290322580645162
+  }
+ },
+ "real_median": {
+  "excess_kurtosis": 3.9785003851751237,
+  "hill_right": 3.3421141235864003,
+  "hill_left": 3.435960755985567,
+  "gain_loss_asymmetry": -0.29604030742746235,
+  "acf_return_1": -0.02853925970801461,
+  "acf_abs_1": 0.1925128591045136,
+  "acf_abs_20": 0.11386934678174751,
+  "acf_abs_decay": -0.41034199116028136,
+  "ljung_box_sq": 6.0655844234873815,
+  "aggregational_gaussianity": 1.91326152717846,
+  "leverage": -0.09915247416161274,
+  "vol_of_vol": 0.4095029888305905,
+  "multiscaling": 0.02651762417041248
+ }
+}
