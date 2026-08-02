@@ -139,6 +139,27 @@ def gain_loss_asymmetry(r):
     return float((z ** 3).mean())
 
 
+def variance_ratio_20(r, q=20):
+    """20日でまとめた分散が、1日分散の20倍からどれだけ外れるか。
+
+    リターンが独立なら分散は期間に比例するので 1 になる。
+    1 未満は平均回帰（まとめると打ち消し合う）、1 超はトレンド持続。
+
+    **他の13個を作った後で足した14個目である。**ABM を通したところ、
+    Franke-Westerhoff と Lux-Marchesi が実データの3〜5倍も強く平均回帰
+    しているのに、13個のどれもそれを直接には見ていなかった。
+    重なりのない20日ブロックを使う（長さ1000なら50ブロック）。
+    """
+    n = (len(r) // q) * q
+    if n < q * 10:
+        return np.nan
+    a = r[:n]
+    v1 = a.var()
+    if v1 <= 0:
+        return np.nan
+    return float((a.reshape(-1, q).sum(axis=1).var() / q) / v1)
+
+
 # 名前 → 関数。この並びがそのまま出力表の行になる。
 BATTERY = {
     "excess_kurtosis": excess_kurtosis,
@@ -154,6 +175,7 @@ BATTERY = {
     "leverage": leverage,
     "vol_of_vol": vol_of_vol,
     "multiscaling": multiscaling,
+    "variance_ratio_20": variance_ratio_20,
 }
 
 
