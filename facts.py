@@ -160,6 +160,28 @@ def variance_ratio_20(r, q=20):
     return float((a.reshape(-1, q).sum(axis=1).var() / q) / v1)
 
 
+def drift(r):
+    """1標準偏差あたりの平均リターン。窓のシャープレシオに相当する。
+
+    **15個目。他の14個が全滅した穴を塞ぐために足した。**
+
+    既存14個のうち6個（尖度・gain_loss_asymmetry・acf_return_1・
+    aggregational_gaussianity・vol_of_vol・variance_ratio_20）は平均を
+    引いてから計算するのでドリフトに完全に盲目、残り8個も |r| 経由で
+    間接的に動くだけである。つまり **バッテリー全体がドリフトを見ていなかった。**
+
+    較正した ABM を累積リターンで描いたところ、3モデルが実データの
+    4〜10倍のドリフトを持つほぼ直線のランプになっていた。目で見れば
+    一発で分かる異常を、14個のどれも検出できなかった。
+
+    スケール不変性は保たれている（分子・分母がともに定数倍される）。
+    """
+    s = float(np.std(r))
+    if s <= 0 or not np.isfinite(s):
+        return np.nan
+    return float(np.mean(r) / s)
+
+
 # 名前 → 関数。この並びがそのまま出力表の行になる。
 BATTERY = {
     "excess_kurtosis": excess_kurtosis,
@@ -176,6 +198,7 @@ BATTERY = {
     "vol_of_vol": vol_of_vol,
     "multiscaling": multiscaling,
     "variance_ratio_20": variance_ratio_20,
+    "drift": drift,
 }
 
 
