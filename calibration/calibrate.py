@@ -26,7 +26,9 @@ import time
 import numpy as np
 from scipy.stats import qmc
 
-SB = "/tmp/claude-0/-home-user-zero-to-one/7d751d50-b39a-5b02-a98a-4a6383b07d4b/scratchpad/sieve-bench"
+# リポジトリの場所は自分の位置から引く。以前は書いた環境の絶対パスが
+# 直書きされていて、その容れ物の外では import が落ちていた。
+SB = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, SB)
 for p in __import__("glob").glob("/workspace/financial-abm-lab/packages/*"):
     sys.path.insert(0, p)

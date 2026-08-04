@@ -144,6 +144,11 @@ class CIParams:
     v_horizon: bool = False   # Vᵢ を投資期間全体の分散にする（付録Aより False が論文通り）
     start_at_equilibrium: bool = True  # 総需要＝発行済株数 となる価格から始める
     v_pin: float | None = None  # 診断用。Vᵢ を実測でなくこの値に固定する
+    # ノイズ成分を horizon にどう積むか。論文の式(1)+(3) を字義通り読むと ε は
+    # 1ステップの率で、τᵢ 倍されて ln(p̂/p) に入る（"linear"）。これだと
+    # σ_ε=1e-4 が τᵢ/Σg ≈ 115 倍されて 1.15% になり、板が締まらない。
+    # "sqrt" は ε を1ステップのショックと読み、horizon では √τᵢ で積む。
+    noise_horizon: str = "sqrt"
 
 
 class ChiarellaIoriPerello:
@@ -305,7 +310,10 @@ class ChiarellaIoriPerello:
             pt = price[t - 1]
             eps = rng.normal(0.0, p.sigma_eps)
             tf = float(ti) if p.tau_f_mode == "own" else float(p.tau_f)
-            rhat = (g1[i] * math.log(pf / pt) / tf + g2[i] * rbar + nn[i] * eps) / gsum[i]
+            # 式(3) が r̂ を τᵢ 倍するので、ε をそのまま入れると horizon 換算で
+            # τᵢ 倍になる。ランダムウォークとして積むなら √τᵢ が正しい。
+            ne = nn[i] * eps / (math.sqrt(ti) if p.noise_horizon == "sqrt" else 1.0)
+            rhat = (g1[i] * math.log(pf / pt) / tf + g2[i] * rbar + ne) / gsum[i]
             rhat = float(np.clip(rhat, -0.5, 0.5))
             p_hat = pt * math.exp(rhat * ti)
             p_hat = float(np.clip(p_hat, p.tick, 1e6))
