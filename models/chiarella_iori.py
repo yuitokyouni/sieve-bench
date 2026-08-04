@@ -46,6 +46,33 @@
      tau_cap ステップ置いて履歴を作ってから、エージェントの取引を始める。
   3. τᵢ = ⌈τ(1+g₁)/(1+g₂)⌉ は裾が重く、σ₁=10 では中央値 800・上位5%が
      2000 を超える。計算量のため tau_cap で打ち切る（論文には上限が無い）。
+
+**未解決 — 価格水準が論文と合わない。**
+
+保存則は成立し（株式・現金とも約定ごとに検査済み）、Hill 指数は σ₂=0 で 4.85
+（論文 3.5〜4.5）、歪度はチャーティストを入れると負（論文の記述と一致）。
+だが**価格がファンダメンタルの 15〜25% の水準に落ち着く。**論文は
+「価格はファンダメンタル価格に非常に近く追随する」と述べている。
+
+診断（暴走ではない。第二の均衡に落ちている）:
+
+  最後の5000ステップの傾きは −0.30/5000歩でほぼ平坦。落ち着いた先で
+  1ステップ std = 0.057 なので V ≈ 0.0033。π=25 を満たすのに必要な
+  ln(p̂/p) = 1.75 に対し、実際の乖離 ln(300/53)×0.83 = 1.44。
+  **高ボラ → 需要減 → 低価格 → 大きな乖離 → 高い期待リターンが需要を支える**
+  という自己整合的な均衡になっている。
+
+起点の候補: t=0 で価格＝ファンダなので期待リターンがゼロ、CARA 需要もゼロ。
+S>0 を持つ全エージェントが同時に売り手になる。
+
+試して外れた仮説:
+  - τ_f の値（200 / 50 / 20 / 5、および各エージェントの τᵢ）
+  - Vᵢ を投資期間全体の分散にする（τᵢ を掛ける）→ さらに悪化（300→0.8）
+  - 総需要＝発行済株数 となる価格から始める → 変わらず
+
+次に当たるべき所: 論文 Figure 6 の「ファンダ支配下では指値が中値のごく近くに
+置かれる」を再現できていない（実測は中央値 118% 離れる）。板の薄さと
+注文価格の分散が本質。価格系列より先に板の統計量を合わせるべき。
 """
 
 import heapq
@@ -71,6 +98,8 @@ class CIParams:
     n_stock: float = 50.0     # N_S
     tau_cap: int = 2000       # τᵢ の上限（計算量のため。論文には無い）
     tau_f_mode: str = "own"   # "fixed"=τ_f を定数、"own"=各エージェントの τᵢ を使う
+    v_horizon: bool = False   # Vᵢ を投資期間全体の分散にする（検証の結果 False が良い）
+    start_at_equilibrium: bool = True  # 総需要＝発行済株数 となる価格から始める
 
 
 class ChiarellaIoriPerello:
@@ -186,10 +215,32 @@ class ChiarellaIoriPerello:
         logret = np.zeros(H + T)
         trades = np.zeros(H + T, dtype=bool)
         pf = p.p_f0
-        price[0] = p.p_f0
+        # **開始水準。**価格＝ファンダだと期待リターンがゼロで CARA 需要もゼロに
+        # なり、S>0 を持つ全エージェントが同時に売り手になる。実測ではここから
+        # 売り崩れが始まり、高ボラ・低価格の第二均衡に落ちていた（ファンダの17.8%）。
+        # 総需要が発行済株数に等しくなる水準から始める。
+        p0 = p.p_f0
+        if p.start_at_equilibrium:
+            V0 = p.sigma_fund ** 2
+            supply = p.n_stock / 2.0            # S₀~U[0,N_S] の平均
+            lo_, hi_ = p.p_f0 * 0.5, p.p_f0
+            for _ in range(60):
+                mid_ = 0.5 * (lo_ + hi_)
+                lr = math.log(p.p_f0 / mid_)
+                dem = 0.0
+                for j in range(0, p.n_agents, 25):   # 間引いて概算
+                    lph = (g1[j] * lr) / gsum[j]
+                    dem += max(lph / (alpha_i[j] * V0 * mid_), 0.0)
+                dem /= len(range(0, p.n_agents, 25))
+                if dem > supply:
+                    lo_ = mid_
+                else:
+                    hi_ = mid_
+            p0 = 0.5 * (lo_ + hi_)
+        price[0] = p0
         for t in range(1, H):
             pf *= math.exp(-0.5 * p.sigma_fund ** 2 + p.sigma_fund * rng.normal())
-            price[t] = pf
+            price[t] = p0 * (pf / p.p_f0)
             logret[t] = math.log(price[t] / price[t - 1])
 
         for t in range(H, H + T):
@@ -215,7 +266,11 @@ class ChiarellaIoriPerello:
             p_hat = pt * math.exp(rhat * ti)
             p_hat = float(np.clip(p_hat, p.tick, 1e6))
 
-            aV = alpha_i[i] * Vi
+            # CARA の最適保有 n* = E[Δp]/(α·Var(p_{t+τ})) を次元で追うと
+            # Var は**投資期間全体**の分散でなければならない。論文の Vᵢ の定義は
+            # 1ステップあたりなので、τᵢ を掛ける必要がある。掛けないと πᵢ が
+            # τᵢ（〜800）倍大きくなり、注文が価格の広範囲に散らばって板が壊れる。
+            aV = alpha_i[i] * (Vi * ti if p.v_horizon else Vi)
             p_star = self._solve_p_star(p_hat, aV, S[i])
             p_m = self._solve_p_m(p_hat, aV, S[i], C[i], p_star)
             p_M = p_hat
