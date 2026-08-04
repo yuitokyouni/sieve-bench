@@ -264,6 +264,7 @@ class ChiarellaIoriPerello:
         # --- 助走：価格をファンダメンタルに追随させて履歴を作る ---
         H = p.tau_cap
         price = np.empty(H + T)
+        fund = np.empty(H + T)          # ファンダメンタル系列（比較・作図用）
         logret = np.zeros(H + T)
         trades = np.zeros(H + T, dtype=bool)
         pf = p.p_f0
@@ -293,11 +294,13 @@ class ChiarellaIoriPerello:
         for t in range(1, H):
             pf *= math.exp(-0.5 * p.sigma_fund ** 2 + p.sigma_fund * rng.normal())
             price[t] = p0 * (pf / p.p_f0)
+            fund[t] = pf
             logret[t] = math.log(price[t] / price[t - 1])
 
         for t in range(H, H + T):
             self._expire(t)
             pf *= math.exp(-0.5 * p.sigma_fund ** 2 + p.sigma_fund * rng.normal())
+            fund[t] = pf
 
             i = int(rng.integers(p.n_agents))
             ti = int(tau_i[i])
@@ -365,8 +368,10 @@ class ChiarellaIoriPerello:
             price[t] = max(last, p.tick)
             logret[t] = math.log(price[t] / price[t - 1])
 
+        fund[0] = p.p_f0
         cut = H + self.warmup
-        return {"prices": price[cut:], "returns": logret[cut:],
+        return {"prices": price[cut:], "fundamental": fund[cut:],
+                "returns": logret[cut:],
                 "n_trades": int(trades[cut:].sum())}
 
     def _round(self, x):

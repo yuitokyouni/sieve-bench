@@ -9,3 +9,6 @@ calibration/*.npy
 calibration/*.png
 calibration/*.log
 calibration/kronos_paths/
+
+# 100本アンサンブルの出力（2.5MB、6分で作り直せる）
+models/ensemble.json
