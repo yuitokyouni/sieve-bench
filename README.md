@@ -21,13 +21,32 @@
 その数の分布が出る。生成器の実行を多数集めれば、そちらの分布も出る。
 **2つの分布がどれだけ重なるか**が、その統計量の識別力である。
 
-重なりは AUC（ROC曲線下面積）で測り、表には
+重なりは **2標本 Kolmogorov-Smirnov 統計量**（分布関数の最大乖離）で測り、
+**置換検定**で p 値を出す。
 
 ```
-power = 2 |AUC - 0.5|      0 = 全く分けられない、1 = 完全に分かれる
+python3 separation.py     # → separation.json
 ```
 
-を出す。**低い数字が、その統計量の弱点を名指ししている。**
+**以前は power = 2|AUC − 0.5| を使っていたが、これは壊れていた。**
+AUC は確率的順序、つまり位置ずれしか見ないので、中心が同じで形が違う分布に
+ほぼゼロを返す：
+
+```
+中央値同一・分散5倍差   power 0.138   KS p = 2.7e-13
+二峰性 vs 単峰         power 0.003   KS p = 2.2e-17
+```
+
+さらに **雑音床が測られていなかった。**同一分布同士でも 124 対 200 なら
+power は平均 0.052・95%点 0.129 になる（絶対値で折り返すため真値ゼロでも
+正に膨らむ）。旧表の 90 セル中 11 セルがこの帯域にあり、
+「その統計量は無力」と読める形で報告されていた。
+
+実害も出ていた。`gain_loss_asymmetry` は旧表で 0.031 と**全15統計量中の最下位**
+だったが、KS では6生成器すべてを p ≤ 0.007 で棄却する。
+**まさに AUC が盲目な「位置は同じで形が違う」失敗モードを踏んでいた。**
+
+旧 AUC 版は `power.json` に比較用として残してある。
 
 比較対象には、正解が分かっている生成器を並べる。目的は落とすことではなく、
 **落とせないことを見つけること**にある。
@@ -41,8 +60,10 @@ power = 2 |AUC - 0.5|      0 = 全く分けられない、1 = 完全に分かれ
 | `garch_norm` | クラスタリングを持つ標準的な計量経済モデル |
 | `garch_t` | 上に加えて重い裾。**強い基準線** |
 
-`iid_bootstrap` は特に重要である。周辺分布が実データそのものなので、
-**これと分けられない統計量は「裾しか見ていない」ことの証明**になる。
+`iid_bootstrap` は時間構造だけを壊す。ただし **周辺分布が一致するのは
+プール全体に対してであって、個々の窓（単一指数・単一時期）に対してではない。**
+以前ここに「これと分けられない統計量は裾しか見ていないことの証明になる」と
+書いていたが、一段強すぎた。言えるのは「時間構造を見ていない疑いが強い」まで。
 
 ## 結果
 
@@ -69,6 +90,23 @@ multiscaling                   0.643      0.882     0.700      0.079       0.621
 variance_ratio_20              0.378      0.354     0.345      0.151       0.307     0.204
 drift                          0.441      0.373     0.087      0.087       0.397     0.411
 ```
+
+### 天井 — 実市場同士でもどれだけ違うか
+
+`separation.py` は **米欧の窓 vs アジアの窓**で同じ量を測った列を出す。
+
+```
+acf_abs_1    KS 0.34 (p=0.002)    acf_abs_20   0.35 (p=0.002)
+ljung_box_sq    0.32 (p=0.003)    leverage     0.32 (p=0.006)
+vol_of_vol      0.47 (p=0.000)
+```
+
+**実市場同士ですら、これらの統計量では有意に違う。**生成器に
+「実データと区別がつかないこと」を要求するのは、**実際の市場同士が
+満たしていない条件を課している**ことになる。
+
+`leverage` は生成器に対して 0.87〜0.98、天井は 0.32。**市場間の異質性の3倍**
+離れている。一方 `block_bootstrap` に対しては 0.33 で**ちょうど天井と同じ**。
 
 ### この数字をどこまで読んでよいか
 
@@ -213,8 +251,26 @@ EURO STOXX 50 だけ開始が遅いのは、Yahoo にそれ以前が無いため
 
 - `facts.py` — 統計量のバッテリー（15個）
 - `generators.py` — 生成器と、実データからのパラメータ推定
-- `run_power.py` — 識別力の測定
+- `separation.py` — **識別力の測定（KS ＋ 置換検定 ＋ 実データ同士の対照）**
+- `run_power.py` — 旧 AUC 版（比較用に残してある）
+- `robustness.py` — 実効標本数・指数別分離度・Hill の k 感度
 - `fetch.py` — データ取得とハッシュ照合
+- `models/` — 論文通りに起こし直した ABM 実装
+- `calibration/` — 較正装置 v1〜v5（`CALIBRATION.md` に経緯）
+- `audit/` — 文献監査のコーディング表と、それを作ったスクリプト
+
+## 統計量の選び方について（開示）
+
+**14個目（`variance_ratio_20`）と15個目（`drift`）は、ABM の失敗を見てから
+足した。**そして同じ ABM に対する分離度を報告している。これは選択的推論の
+問題であり、**経緯を開示しても補正にはならない。**
+
+正しい処方は、統計量の選択に使うモデル群と評価対象のモデル群を分けること
+（機械学習の train/test 分離と同じ規律）。現状は分かれていない。
+次の版で、選択用と評価用のモデル群を最初から分離した設計に組み直す。
+
+**公開後には逆向きの同じ問題が起きる。**このベンチに合わせ込む
+（Goodhart 化）動機が生じ、上の「読み取れること2」がベンチ自身に跳ね返る。
 
 ## 正直に書いておく限界
 
@@ -242,7 +298,21 @@ EURO STOXX 50 だけ開始が遅いのは、Yahoo にそれ以前が無いため
    `block_bootstrap` 相手に 0.150 → 0.041 と動いた。他の12個は全て 0.085 以内。
    ブートストラップ区間の平均幅も 0.160 と広い方である。
    **この統計量は現在の窓数では推定量の分散が大きすぎる。**
-8. **生成器の梯子が失敗の仕方を網羅していない。**ここに並べた6つは
+8. **6指数は横方向に依存している。**2008年や2020年の窓は全指数に同時に現れ、
+   EURO STOXX 50 は DAX 構成銘柄を含むので一部は二重計上になる。
+   時期ブロック内の相関から実効標本数を概算すると、**名目124本に対し
+   中央値49本**（デザイン効果 1.68〜3.27）。**ブートストラップ区間は
+   約1.59倍に広げるべき**である（`robustness.py`）
+9. **「実データ」が6指数の混合であることの交絡。**分離度が低いとき、
+   「統計量が鈍い」のか「指数間の異質性が大きい」のかを区別できない。
+   指数ごとに測ると `acf_abs_1` は混合 0.20 に対し指数別 0.27〜0.56 で、
+   **混合による希釈**が起きている。一方 `leverage` は混合 0.87・
+   指数別 0.78〜0.94 でほぼ不変
+10. **Hill の k を 5% に固定している。**極値理論でよく知られた罠で、
+    k を 2.5%→10% と振ると実データの推定値が 3.54→2.97、
+    `garch_t` に対する KS が 0.47→0.70 に動く。**`hill_*` の行は
+    k の選択に依存している**
+11. **生成器の梯子が失敗の仕方を網羅していない。**ここに並べた6つは
    パラメトリックな生成器とブートストラップだけで、構造を持つモデル
    （ABM や LLM エージェント）が起こす壊れ方は含まれていない。
    実際 `variance_ratio_20` は6生成器に対して弱いのに、
@@ -261,8 +331,39 @@ EURO STOXX 50 だけ開始が遅いのは、Yahoo にそれ以前が無いため
 
 ## 参照
 
+この仕事は ABM の較正・検証という確立した文脈の中にある。位置づけを明示する。
+
+**検証・較正の方法論**
+- Platt, D. (2020). A comparison of economic agent-based model calibration
+  methods. *Journal of Economic Dynamics and Control*.
+- Platt, D. & Gebbie, T. (2016). The problem of calibrating an agent-based
+  model of high-frequency trading. arXiv:1606.01495.
+  — **スタイライズドファクツ中心の検証の不十分さは、ここで既に指摘されている。**
+  本ベンチはそれを統計量ごとに定量化するもので、主張自体の初出ではない。
+- Fagiolo, G., Guerini, M., Lamperti, F., Moneta, A. & Roventini, A. (2017).
+  Validation of agent-based models in economics and finance. LEM working paper.
+- LeBaron, B. Matching stylized facts with style.
+
+**モデル判別の距離・指標**
+- Barde, S. MIC（Markov information criterion）
+- Lamperti, F. GSL-div
+
+**本ベンチが使っている統計量の出典**
 - Cont, R. (2001). Empirical properties of asset returns: stylized facts and
   statistical issues. *Quantitative Finance*, 1(2), 223–236.
+- **Lo, A. W. & MacKinlay, A. C. (1988). Stock market prices do not follow
+  random walks. *Review of Financial Studies*, 1(1), 41–66.**
+  — `variance_ratio_20` はこの分散比検定である。独立に作ってから気づいた。
+
+**モデルの原論文**
+- Franke, R. & Westerhoff, F. (2009). Validation of a structural stochastic
+  volatility model of asset pricing. BERG working paper.
+- Chiarella, C., Iori, G. & Perelló, J. (2009). The impact of heterogeneous
+  trading rules on the limit order book and order flows. arXiv:0711.3581.
+- Lux, T. & Marchesi, M. (2000). Volatility clustering in financial markets.
+  *IJTAF*, 3(4), 675–702.
+- Cont, R. & Bouchaud, J.-P. (2000). Herd behavior and aggregate fluctuations
+  in financial markets. *Macroeconomic Dynamics*, 4(2), 170–196.
 
 ## ライセンス
 
