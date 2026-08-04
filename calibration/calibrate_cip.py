@@ -54,13 +54,18 @@ from models.chiarella_iori import ChiarellaIoriPerello, CIParams  # noqa: E402
 WINDOW = C.WINDOW
 SEED = C.SEED
 FITTED = C.FITTED
-N_DRAWS, N_SEEDS, N_PROC = 384, 3, 4
+N_DRAWS, N_SEEDS, N_PROC = 512, 3, 4
+
+# 価格がファンダのこの範囲に収まる走行だけを採用する（論文の主張を制約に課す）
+PRICE_GATE = (0.80, 1.25)
 
 # (下限, 上限, 対数で振るか)
+# σ₂ の上限は最初 3.0（論文 Figure 4 右の描画範囲）にしていたが、最適点が
+# そこに張り付いたので広げた。論文は σ₁,σ₂ を 0〜30 で振ったと書いている。
 BOX = {
     "alpha":      (0.002, 0.20, 1),
-    "sigma_1":    (0.0, 30.0, 0),
-    "sigma_2":    (0.0, 3.0, 0),
+    "sigma_1":    (0.0, 40.0, 0),
+    "sigma_2":    (0.0, 12.0, 0),
     "tau":        (20, 500, 0),
     "sigma_eps":  (1e-5, 1e-3, 1),
     "sigma_fund": (1e-4, 1e-2, 1),
@@ -85,10 +90,14 @@ def build(p, seed):
     n_steps = agg * WINDOW
     o = ChiarellaIoriPerello(n_steps=n_steps, warmup=agg * 50, params=pr).run(seed=seed)
 
-    # 価格が崩壊／発散した走行は棄却する（板が壊れている状態を較正で拾わない）
+    # **価格がファンダに追随している走行しか採らない。**論文の主張そのもの
+    # （"the market arrives at a price that follows closely the fundamental"）を
+    # 制約として課す。最初は 0.2〜5.0 と緩くしていたが、それだと σ₂≈10 の
+    # 「リターンの統計量は合うが価格がファンダの 31% に落ちている」点を
+    # 拾ってしまった。板を壊さずにどこまで S&P500 に寄れるかを測るための門。
     ratio = float(np.median(o["prices"])) / pr.p_f0
-    if not (0.2 < ratio < 5.0):
-        raise ValueError(f"価格水準が壊れている ({ratio:.3f})")
+    if not (PRICE_GATE[0] < ratio < PRICE_GATE[1]):
+        raise ValueError(f"価格がファンダから離れている ({ratio:.3f})")
 
     lr = np.asarray(o["returns"], dtype=float)
     lr = lr[np.isfinite(lr)]
@@ -181,10 +190,17 @@ def main():
         print(f"精錬後 loss = {bl:.3f}   ({time.time()-t0:.0f}s)\n")
 
     A = best["alpha"] * 50.0 * 300.0
+    at_bound = []
+    for i, k in enumerate(KEYS):
+        f = (float(best[k]) - lo[i]) / (hi[i] - lo[i])
+        if f <= 0.02 or f >= 0.98:
+            at_bound.append(k)
     print("較正結果")
     for k in KEYS:
-        print(f"  {k:12} {best[k]:12.5g}   (論文 {PAPER[k]})")
-    print(f"  A = α·N_S·pᶠ {A:11.1f}   (論文 1500)\n")
+        mark = "  ← 境界" if k in at_bound else ""
+        print(f"  {k:12} {best[k]:12.5g}   (論文 {PAPER[k]}){mark}")
+    print(f"  A = α·N_S·pᶠ {A:11.1f}   (論文 1500)")
+    print(f"  境界: {at_bound if at_bound else 'なし'}\n")
 
     print(f"  {'統計量':<26} {'S&P500':>9} {'モデル':>9} {'z':>7}  合わせた")
     summ = {}
@@ -195,7 +211,7 @@ def main():
         print(f"  {k:<26} {target[k]:9.4f} {bs[k]:9.4f} {z:7.2f}  "
               f"{'○' if k in FITTED else ''}")
 
-    json.dump({"params": best, "A": A, "loss": bl, "paper_loss": pl,
+    json.dump({"params": best, "A": A, "loss": bl, "paper_loss": pl, "at_bound": at_bound,
                "paper_params": PAPER, "fitted": list(FITTED), "stats": summ},
               open(os.path.join(HERE, "calibration_cip.json"), "w"),
               ensure_ascii=False, indent=1)
