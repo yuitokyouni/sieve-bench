@@ -36,6 +36,24 @@ from dataclasses import dataclass
 
 import numpy as np
 
+# 「論文通りに動くか」と「現実に似ているか」は別問題である。分けて宣言する。
+# 語彙は `models/status.py` を参照。
+IMPLEMENTATION_STATUS = {
+    "model": "franke_westerhoff_tpa",
+    "source": "Franke & Westerhoff (2009), BERG working paper, TPA 版",
+    "specification_conformance": "verified",
+    "invariant_tests": "pass",
+    "paper_replication": "pass",
+    "empirical_validation": "fail",
+    "notes": (
+        "式(1)〜(8)と Table 1 を転記。式(5)の分母 /2 は論文の印字と導出が"
+        "食い違っており、分母なしの版が Table 2 を再現する（経緯はソース内）。"
+        "Table 2 の報告値8つに一致するので paper_replication は pass。"
+        "一方、実データとの照合では drift が実データの 9.5 倍あり、"
+        "`separation.py` の drift / variance_ratio_20 で落ちる。"
+        "**論文を正しく実装できていることと、現実に似ていることは別である。**"),
+}
+
 
 @dataclass
 class FWParams:

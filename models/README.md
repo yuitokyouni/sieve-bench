@@ -2,10 +2,32 @@
 
 **既存の再実装が論文のモデルでないことが分かったので、原論文から起こし直したもの。**
 
-| ファイル | 状態 | 検証 |
+## 実装の状態
+
+「完成／未完成」の一列では足りない。**論文どおりに動くこと**と
+**現実に似ていること**は別の問いなので、分けて宣言する（`python3 models/status.py`）。
+
+| | `franke_westerhoff` | `chiarella_iori` |
 |---|---|---|
-| `franke_westerhoff.py` | **完成** | 論文 Table 2 の報告値8つ全てに一致 |
-| `chiarella_iori.py` | **未完成** | 板の挙動が論文 Figure 6 と2桁ずれる |
+| `specification_conformance` | verified | **partial** |
+| `invariant_tests` | pass | pass |
+| `paper_replication` | pass | **fail** |
+| `empirical_validation` | **fail** | not_run |
+
+上3行が verification、最終行だけが validation である。
+
+**Franke-Westerhoff は論文 Table 2 の報告値8つ全てに一致するのに、実データとの
+照合では落ちる**（drift が実データの 9.5 倍）。論文を正しく実装できていることは、
+現実に似ていることを意味しない。この2つを1つの「検証済み」に潰してはいけない。
+
+**Chiarella-Iori は paper_replication が fail なので empirical_validation を
+走らせていない。**論文を再現できていない実装で現実との一致を測っても、
+何を測っているのか分からないからである。
+
+`invariant_tests` は宣言ではなく実行可能な検査である。Chiarella-Iori の
+株式・現金の保存則は約定ごとに成立する（相対誤差 0.0、`status.py` が毎回確認する）。
+
+語彙の定義と、宣言と実測が食い違ったときの検出は `models/status.py` にある。
 
 ## なぜ作り直したか
 

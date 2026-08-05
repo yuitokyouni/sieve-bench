@@ -139,10 +139,61 @@ def multiscaling(r, qs=(1.0, 2.0), taus=(1, 2, 5, 10, 20)):
     return float(z[1.0] - z[2.0] / 2.0)
 
 
-def gain_loss_asymmetry(r):
-    """利得と損失の非対称。標準化リターンの3次モーメント。"""
+def return_skewness(r):
+    """標準化リターンの3次モーメント。ただの歪度である。
+
+    **v0.1 では `gain_loss_asymmetry` という名前だった。**中身は昔から
+    3次モーメントで、金融でいう gain/loss asymmetry —— 利得側と損失側の
+    到達時間の非対称（Jensen, Johansen & Simonsen 2003 の inverse statistics）
+    —— とは別物である。名前が実装を誤って表していた。
+
+    改名しただけで値は変わらない。本来の gain/loss asymmetry は
+    `gain_loss_asymmetry` として別に実装してある。
+    """
     z = (r - r.mean()) / r.std()
     return float((z ** 3).mean())
+
+
+def gain_loss_asymmetry(r, rho=4.0, horizon=250):
+    """本来の意味での利得／損失の非対称。**到達時間**で測る。
+
+    出典: Jensen, M. H., Johansen, A. & Simonsen, I. (2003).
+    "Inverse statistics in economics: the gain-loss asymmetry."
+    Physica A 324, 338-343.
+
+    ある日から見て、累積リターンが **+rho·sigma に達するまでの日数**と
+    **-rho·sigma に達するまでの日数**を比べる。株価指数では損失側のほうが
+    早く到達する（下げは速く、上げは遅い）ことが知られている。
+
+    返すのは log(利得側の中央値 / 損失側の中央値)。正なら「上げに時間がかかる」。
+    両方向とも horizon 以内に到達した起点だけを使う（片側だけの打ち切りが
+    入ると比較が偏るため）。rho は窓自身の標準偏差で測るのでスケール不変。
+
+    **3次モーメントとは別物である。**対称な分布でも到達時間は非対称になりうるし、
+    その逆もある。
+    """
+    r = np.asarray(r, float)
+    s = float(np.std(r))
+    n = len(r)
+    K = min(horizon, n - 1)
+    if s <= 0 or not np.isfinite(s) or n - K < 100:
+        return np.nan
+    c = np.concatenate([[0.0], np.cumsum(r)])
+    starts = np.arange(n - K)
+    base = c[starts]
+    lvl = rho * s
+    up = np.zeros(len(starts), dtype=int)
+    dn = np.zeros(len(starts), dtype=int)
+    for k in range(1, K + 1):
+        d = c[starts + k] - base
+        up[(up == 0) & (d >= lvl)] = k
+        dn[(dn == 0) & (d <= -lvl)] = k
+        if up.all() and dn.all():
+            break
+    both = (up > 0) & (dn > 0)
+    if both.sum() < 50:
+        return np.nan
+    return float(np.log(np.median(up[both]) / np.median(dn[both])))
 
 
 def variance_ratio_20(r, q=20):
@@ -197,6 +248,7 @@ BATTERY = {
     "excess_kurtosis": excess_kurtosis,
     "hill_right": hill_right,
     "hill_left": hill_left,
+    "return_skewness": return_skewness,
     "gain_loss_asymmetry": gain_loss_asymmetry,
     "acf_return_1": acf_return_1,
     "acf_abs_1": acf_abs_1,

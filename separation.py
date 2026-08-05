@@ -1,27 +1,39 @@
-"""識別力の測り直し。
+"""識別力の測定 —— どの統計量が、どの生成器を見破れるか。
 
-**power = 2|AUC-0.5| は壊れている。**AUC = P(生成 > 実データ) は確率的順序、
-つまり位置ずれしか見ない。中心が同じで形が違う分布に対してほぼゼロを返す：
+各統計量は1本のリターン系列を1つの数に落とす。実データの窓を多数集めれば
+その数の分布が出る。生成器の実行を多数集めれば、そちらの分布も出る。
+**2つの分布がどれだけ重なるか**が、その統計量の識別力である。
+重なりは2標本 Kolmogorov-Smirnov 統計量（分布関数の最大乖離）で測る。
 
-    中央値同一・分散5倍差   power 0.138   KS p = 2.7e-13
-    二峰性 vs 単峰         power 0.003   KS p = 2.2e-17
+    python3 separation.py     # → separation.json（2分ほど）
 
-さらに **雑音床が測られていなかった。**同一分布同士でも 124 対 200 なら
-power は平均 0.052、95%点 0.129 になる（絶対値で折り返すため、真値ゼロでも
-正に膨らむ）。旧 power.json の 90 セル中 11 セルがこの帯域に入っており、
-「その統計量は無力」と読める形で報告されていた。
+## v0.2 で直したこと
 
-ここでは3つ入れ替える:
+**1. p 値の出し方が間違っていた。**v0.1 は実データ 124 本と生成 200 本を
+1つのプールに入れてラベルを完全にランダムに入れ替えていた。これは 324 個が
+交換可能という仮定だが、実データの窓は
+（a）ストライド 250・窓長 1000 で隣と 75% 重なり、
+（b）同時期の各指数が相関し、
+（c）EURO STOXX 50 は DAX 構成銘柄を含む。
+`selftest.py` で測ったところ、**帰無仮説が真でもブロック内相関 0.6 なら
+56% 棄却していた**（名目 5%）。ここでは交換の単位を暦のブロックに上げる
+（`resampling.block_boot_test`）。
 
-  1. 検定統計量を **2標本 Kolmogorov-Smirnov** にする。分布関数の最大乖離なので
-     位置・尺度・形のいずれのずれにも反応する。
-  2. **置換検定で p 値**を出す。ラベルを入れ替えた帰無分布に対する位置で測るので、
-     標本数の違いによる床が自動的に織り込まれる。
-  3. **実データ同士の対照（天井）**を併記する。米欧の窓 vs アジアの窓で同じ量を
-     測り、「実市場同士ですらこれだけ違う」水準を示す。これを超えられない
-     統計量に生成器のゼロを要求しても意味がない。
+**2. それでも名目水準には届かない。**独立な暦ブロックが6個しかないためで、
+クラスタ数 20 未満の過剰棄却は広く知られている。**そこで閾値を較正した。**
+名目 p < 0.01 で真の大きさが 3〜5% に収まる（`selftest.py` の較正表）。
+以下ではこの **p < 0.01 を 5% 水準の判定線**として使う。
 
-出力は `separation.json`。旧 `power.json` は AUC 版として残す（比較のため）。
+**3. 天井という呼び方をやめた。**米欧 vs アジアの差は「越えるべき天井」ではなく、
+**現実どうしのばらつきの一例**にすぎない。制度・通貨・産業構成・期間が違うので、
+それより差が小さいことは対象市場を再現している証拠にならない。同じ市場の
+別時代どうし、似た2市場どうしなど、参照を複数並べる形に変えた。
+
+**4. 周辺分布を15個並べるだけでは足りない。**個別には全部合っていて同時分布が
+壊れている生成器を通してしまう。統計量ベクトル全体の energy 検定を足した。
+個別の KS は「何が壊れているか」の診断として残す。
+
+**5. 多重性。**16統計量 × 8生成器 = 128 セル。Benjamini-Hochberg の q 値を出す。
 """
 
 import json
@@ -32,67 +44,67 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from facts import BATTERY, evaluate            # noqa: E402
-from generators import GENERATORS, build_context  # noqa: E402
-from run_power import load_returns, real_windows, WINDOW, STRIDE, N_RUNS, SEED  # noqa: E402
+from facts import BATTERY, evaluate                                # noqa: E402
+from generators import GENERATORS, HELD_OUT, build_context         # noqa: E402
+from resampling import (benjamini_hochberg, block_boot_test,       # noqa: E402
+                        block_perm_test, energy_block_test,
+                        intraclass_rho, iid_perm_test, ks_stat)
+from windows import (BLOCK_WIDTHS, WINDOW, STRIDE, calendar_blocks,  # noqa: E402
+                     describe_blocks, load_series, real_windows)
 
-N_PERM = 2000
+N_DRAW = 2000
+N_RUNS = 200
+SEED = 20260802
 
-# 指数を地域で二分し、実データ同士の対照に使う
+# `selftest.py` の較正表から。名目 p < この値で真の大きさが 3〜5%。
+ALPHA = 0.01
+
+# 参照対照（現実どうしのばらつき）。天井ではない。
 GROUP_A = {"gspc", "ftse", "gdaxi", "sx5e"}   # 米欧
-GROUP_B = {"n225", "hsi"}                      # アジア
+GROUP_B = {"n225", "hsi"}                     # アジア
+ERA_SPLIT = 2014                              # 前半／後半の境目
 
 
-def ks_stat(a, b):
-    """2標本 KS 統計量。分布関数の最大乖離。"""
-    a = np.sort(np.asarray(a, float))
-    b = np.sort(np.asarray(b, float))
-    a = a[np.isfinite(a)]
-    b = b[np.isfinite(b)]
-    if len(a) < 5 or len(b) < 5:
-        return np.nan
-    allv = np.concatenate([a, b])
-    ca = np.searchsorted(a, allv, side="right") / len(a)
-    cb = np.searchsorted(b, allv, side="right") / len(b)
-    return float(np.max(np.abs(ca - cb)))
-
-
-def perm_test(a, b, rng, n_perm=N_PERM):
-    """置換検定。返り値 (KS統計量, p値, 帰無の95%点)。
-
-    ラベルを入れ替えた分布に対する位置で測るので、標本数の違いに由来する
-    床は自動的に織り込まれる。
-    """
-    a = np.asarray(a, float)
-    b = np.asarray(b, float)
-    a = a[np.isfinite(a)]
-    b = b[np.isfinite(b)]
-    if len(a) < 5 or len(b) < 5:
-        return np.nan, np.nan, np.nan
-    obs = ks_stat(a, b)
-    pool = np.concatenate([a, b])
-    na = len(a)
-    null = np.empty(n_perm)
-    for i in range(n_perm):
-        p = rng.permutation(pool)
-        null[i] = ks_stat(p[:na], p[na:])
-    pval = float((1.0 + np.sum(null >= obs)) / (n_perm + 1.0))
-    return float(obs), pval, float(np.percentile(null, 95))
+def contrasts(wins):
+    """実データどうしの対照を作る。返り値 {名前: (左の添字, 右の添字, 説明)}。"""
+    idx = range(len(wins))
+    out = {}
+    out["region"] = ([i for i in idx if wins[i].index in GROUP_A],
+                     [i for i in idx if wins[i].index in GROUP_B],
+                     "米欧 vs アジア（制度・通貨・産業構成が違う）")
+    out["era"] = ([i for i in idx if wins[i].start.year < ERA_SPLIT],
+                  [i for i in idx if wins[i].start.year >= ERA_SPLIT],
+                  f"同じ6指数の {ERA_SPLIT} 年より前 vs 後（同じ市場の別時代）")
+    out["gspc_vs_ftse"] = ([i for i in idx if wins[i].index == "gspc"],
+                           [i for i in idx if wins[i].index == "ftse"],
+                           "S&P500 vs FTSE100（最も似た2市場）")
+    same = [i for i in idx if wins[i].index == "gspc"]
+    out["gspc_split"] = (same[0::2], same[1::2],
+                         "S&P500 の窓を1本おきに二分（同一市場・同一時代）")
+    return out
 
 
 def main():
     rng = np.random.default_rng(SEED)
-    series = load_returns()
-    pool = np.concatenate(list(series.values()))
+    series = load_series()
+    pool = np.concatenate([r for r, _ in series.values()])
     print(f"指数 {len(series)} 本、リターン {len(pool)} 点", flush=True)
 
-    ctx = build_context(series["gspc"])
+    ctx = build_context(series["gspc"][0], verbose=True)
     ctx["pool"] = pool
+    print(f"  GARCH(1,1) 正規: {np.round(ctx['garch'], 4).tolist()}")
+    print(f"  GARCH-t 同時MLE: {np.round(ctx['garch_t'], 4).tolist()}")
+    print(f"  GJR-t          : {np.round(ctx['gjr_t'], 4).tolist()}")
+    print(f"  EGARCH-t       : {np.round(ctx['egarch_t'], 4).tolist()}")
 
     wins = real_windows(series)
-    real = [evaluate(w) for _, w in wins]
-    names = [n for n, _ in wins]
-    print(f"実データの窓 {len(wins)} 本", flush=True)
+    blocks = calendar_blocks(wins, BLOCK_WIDTHS["span"])
+    binfo = describe_blocks(wins, blocks)
+    real = [evaluate(w.values) for w in wins]
+    print(f"\n実データの窓 {len(wins)} 本 → 暦ブロック {len(binfo)} 個", flush=True)
+    for b in binfo:
+        print(f"    ブロック{b['block']}  {b['start']} 〜 {b['end']}  "
+              f"{b['n']:2d}本  {len(b['indices'])}指数")
 
     results = {}
     for gname, gfn in GENERATORS.items():
@@ -102,59 +114,129 @@ def main():
     stats_names = list(BATTERY.keys())
     gen_names = list(GENERATORS.keys())
 
-    ia = [i for i, n in enumerate(names) if n in GROUP_A]
-    ib = [i for i, n in enumerate(names) if n in GROUP_B]
-    print(f"実データ同士の対照: 米欧 {len(ia)} 本 vs アジア {len(ib)} 本", flush=True)
-
     out = {"config": {"window": WINDOW, "stride": STRIDE, "n_runs": N_RUNS,
-                      "n_perm": N_PERM, "seed": SEED, "n_real_windows": len(wins),
-                      "group_a": sorted(GROUP_A), "group_b": sorted(GROUP_B),
-                      "n_a": len(ia), "n_b": len(ib)},
-           "ks": {}, "pvalue": {}, "null95": {}, "real_vs_real": {}}
+                      "n_draw": N_DRAW, "seed": SEED, "alpha": ALPHA,
+                      "n_real_windows": len(wins), "n_blocks": len(binfo),
+                      "block_width_days": BLOCK_WIDTHS["span"],
+                      "held_out_generators": list(HELD_OUT)},
+           "blocks": binfo, "rho": {}, "ks": {},
+           "p": {}, "p_blockperm": {}, "p_iid": {}, "q": {},
+           "joint_energy": {}, "reference_contrasts": {}}
 
+    # ------------------------------------------------------------- 個別診断層
+    print("\n個別の統計量ごとに測る（帰無分布は3通り）…", flush=True)
     for s in stats_names:
         rv = [d[s] for d in real]
-        out["ks"][s], out["pvalue"][s], out["null95"][s] = {}, {}, {}
+        out["rho"][s] = intraclass_rho(rv, blocks)
+        out["ks"][s], out["p"][s] = {}, {}
+        out["p_blockperm"][s], out["p_iid"][s] = {}, {}
         for g in gen_names:
-            k, p, n95 = perm_test(rv, [d[s] for d in results[g]], rng)
-            out["ks"][s][g] = k
-            out["pvalue"][s][g] = p
-            out["null95"][s][g] = n95
-        ka, pa, _ = perm_test([rv[i] for i in ia], [rv[i] for i in ib], rng)
-        out["real_vs_real"][s] = {"ks": ka, "pvalue": pa}
+            gv = [d[s] for d in results[g]]
+            k, p, _, _ = block_boot_test(rv, blocks, gv, ks_stat, rng, N_DRAW)
+            _, p2, _, _ = block_perm_test(rv, blocks, gv, ks_stat, rng, N_DRAW)
+            _, p3, _ = iid_perm_test(rv, gv, ks_stat, rng, N_DRAW)
+            out["ks"][s][g], out["p"][s][g] = k, p
+            out["p_blockperm"][s][g], out["p_iid"][s][g] = p2, p3
         print(f"  {s}", flush=True)
+
+    flat = [(s, g) for s in stats_names for g in gen_names]
+    q = benjamini_hochberg([out["p"][s][g] for s, g in flat])
+    for (s, g), qq in zip(flat, q):
+        out["q"].setdefault(s, {})[g] = float(qq) if np.isfinite(qq) else None
+
+    # --------------------------------------------------------------- 総合層
+    print("\n統計量ベクトル全体の energy 検定…", flush=True)
+    A = np.array([[d[s] for s in stats_names] for d in real])
+    for g in gen_names:
+        B = np.array([[d[s] for s in stats_names] for d in results[g]])
+        e, p, n95 = energy_block_test(A, blocks, B, rng, N_DRAW)
+        out["joint_energy"][g] = {"energy": e, "pvalue": p, "null95": n95}
+        print(f"  {g:16s} E = {e:8.2f}  p = {p:.4f}", flush=True)
+
+    # ----------------------------------------------------- 現実どうしのばらつき
+    print("\n参照対照（現実どうしのばらつき）…", flush=True)
+    for cname, (ia, ib, desc) in contrasts(wins).items():
+        row = {"desc": desc, "n_a": len(ia), "n_b": len(ib), "ks": {}, "pvalue": {}}
+        for s in stats_names:
+            va = [real[i][s] for i in ia]
+            vb = [real[i][s] for i in ib]
+            k, p, _, _ = block_perm_test(va, blocks[ia], vb, ks_stat, rng,
+                                         N_DRAW, b_blocks=blocks[ib])
+            row["ks"][s], row["pvalue"][s] = k, p
+        out["reference_contrasts"][cname] = row
+        print(f"  {cname:16s} {len(ia):3d} vs {len(ib):3d}  {desc}", flush=True)
 
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "separation.json"), "w") as f:
-        json.dump(out, f, indent=1)
+        json.dump(out, f, ensure_ascii=False, indent=1)
 
-    # ------------------------------------------------------------------ 表示
+    report(out, stats_names, gen_names)
+
+
+def report(out, stats_names, gen_names):
+    def cell(v, p):
+        if not np.isfinite(v):
+            return "—"
+        mark = "*" if p < ALPHA else " "
+        return f"{v:.2f}({p:.3f}){mark}"
+
     w0 = max(len(s) for s in stats_names) + 1
-    print("\nKS 統計量（分布関数の最大乖離）。括弧内は置換検定の p 値\n")
-    hdr = "統計量".ljust(w0) + "".join(g[:11].rjust(16) for g in gen_names) + "実データ同士".rjust(16)
+    print("\n\nKS 統計量（分布関数の最大乖離）。括弧内はブロック復元抽出の p 値。")
+    print(f"* は較正済みの判定線 p < {ALPHA}（真の大きさ 3〜5%）を下回ったもの。")
+    print("右2列 gjr_t / egarch_t は**統計量を選んだ後に足した held-out**。\n")
+    hdr = "統計量".ljust(w0) + "".join(g[:11].rjust(16) for g in gen_names)
     print(hdr)
     print("-" * len(hdr))
     for s in stats_names:
         row = s.ljust(w0)
         for g in gen_names:
-            k = out["ks"][s][g]
-            p = out["pvalue"][s][g]
-            row += (f"{k:.2f}({p:.3f})" if np.isfinite(k) else "—").rjust(16)
-        rr = out["real_vs_real"][s]
-        row += (f"{rr['ks']:.2f}({rr['pvalue']:.3f})"
-                if np.isfinite(rr["ks"]) else "—").rjust(16)
+            row += cell(out["ks"][s][g], out["p"][s][g]).rjust(16)
         print(row)
     print("-" * len(hdr))
-    print("\n右端が天井：実市場同士でもこれだけ違う。"
-          "これを超えない生成器を『現実的』とは言えない一方、\n"
-          "これを下回る差を統計量が拾えないことは欠陥ではない。")
 
-    print("\n5% 水準で全生成器を棄却できた統計量：")
+    print("\n帰無分布の作り方でどれだけ変わるか（判定線 p < "
+          f"{ALPHA} を下回るセル数 / {len(stats_names) * len(gen_names)}）")
+    for key, label in (("p_iid", "完全置換（v0.1・無効）"),
+                       ("p_blockperm", "ブロック置換"),
+                       ("p", "ブロック復元抽出（採用）")):
+        n = sum(1 for s in stats_names for g in gen_names
+                if np.isfinite(out[key][s][g]) and out[key][s][g] < ALPHA)
+        print(f"  {label:<26} {n:3d}")
+    nq = sum(1 for s in stats_names for g in gen_names
+             if out["q"][s][g] is not None and out["q"][s][g] < 0.05)
+    print(f"  {'BH の q < 0.05':<26} {nq:3d}   （多重性を通した後）")
+
+    print("\nブロック内相関（較正表のどの行で読むか）")
+    rr = sorted(((v, s) for s, v in out["rho"].items() if np.isfinite(v)),
+                reverse=True)
+    print("  高い: " + ", ".join(f"{s}={v:.2f}" for v, s in rr[:4]))
+    print("  低い: " + ", ".join(f"{s}={v:.2f}" for v, s in rr[-4:]))
+
+    print("\n統計量ベクトル全体（energy 検定）")
+    for g in gen_names:
+        j = out["joint_energy"][g]
+        mark = "*" if j["pvalue"] < ALPHA else " "
+        print(f"  {g:16s} E = {j['energy']:8.2f}  p = {j['pvalue']:.4f}{mark}")
+
+    print("\n参照対照 —— **現実どうしでもこれだけ違う。天井ではない。**")
+    for cname, row in out["reference_contrasts"].items():
+        big = sorted(((v, s) for s, v in row["ks"].items() if np.isfinite(v)),
+                     reverse=True)[:3]
+        print(f"  {cname:14s} ({row['n_a']:3d} vs {row['n_b']:3d}) {row['desc']}")
+        print("      最大: " + ", ".join(f"{s} {v:.2f}" for v, s in big))
+
+    print(f"\n判定線 p < {ALPHA} で**全生成器**を落とせた統計量：")
+    any_hit = False
     for s in stats_names:
-        ps = [out["pvalue"][s][g] for g in gen_names if np.isfinite(out["pvalue"][s][g])]
-        if ps and max(ps) < 0.05:
-            worst = max(ps)
-            print(f"  {s:<28} 最悪 p = {worst:.4f}")
+        ps = [out["p"][s][g] for g in gen_names if np.isfinite(out["p"][s][g])]
+        if ps and max(ps) < ALPHA:
+            print(f"  {s:<28} 最悪 p = {max(ps):.4f}")
+            any_hit = True
+    if not any_hit:
+        print("  なし。")
+    print("\n（この「全生成器を落とせた」は交差-合併検定なので、多重性の補正は")
+    print("  要らない。全部が有意であることを要求する側は、もともと水準を超えない。")
+    print("  補正が要るのは「どこかに有意差がある」を探す側で、そちらは BH の q。）")
 
 
 if __name__ == "__main__":

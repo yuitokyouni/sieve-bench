@@ -82,6 +82,25 @@ from dataclasses import dataclass
 import numpy as np
 
 
+IMPLEMENTATION_STATUS = {
+    "model": "chiarella_iori_perello",
+    "source": "Chiarella, Iori & Perelló (arXiv:0711.3581 / JEDC 2009)",
+    "specification_conformance": "partial",
+    "invariant_tests": "pass",
+    "paper_replication": "fail",
+    "empirical_validation": "not_run",
+    "notes": (
+        "期待形成・CARA 需要・注文配置表・指値キュー・マッチング・期限切れまで"
+        "実装済みで、株式と現金の保存則は約定ごとに成立する（実行可能な検査あり）。"
+        "だが論文に規定の無い箇所が3つあり（τ_f の値、V の初期化、τ の上限）、"
+        "specification_conformance は partial。"
+        "価格がファンダメンタルの 15〜25% に落ち着き、論文の『価格はファンダに"
+        "非常に近く追随する』を再現しないので paper_replication は fail。"
+        "**論文を再現できていない実装で現実との一致を測っても意味が無い**ため、"
+        "empirical_validation は not_run のままにしてある。"),
+}
+
+
 @dataclass
 class CIParams:
     n_agents: int = 5000
@@ -205,6 +224,8 @@ class ChiarellaIoriPerello:
         W = p.n_stock * p.p_f0
         S = rng.uniform(0.0, p.n_stock, p.n_agents)
         C = rng.uniform(0.0, W, p.n_agents)
+        # 保存則の検査用。株式と現金は約定で移動するだけで、総量は動かない。
+        s_total0, c_total0 = float(S.sum()), float(C.sum())
 
         self._orders, self._bids, self._asks, self._exp = {}, [], [], []
         self._next_id = 0
@@ -311,7 +332,11 @@ class ChiarellaIoriPerello:
 
         cut = H + self.warmup
         return {"prices": price[cut:], "returns": logret[cut:],
-                "n_trades": int(trades[cut:].sum())}
+                "n_trades": int(trades[cut:].sum()),
+                # 実行可能な不変量。主張ではなく走らせて確かめる（`status.py`）。
+                "conservation": {
+                    "shares_rel": abs(float(S.sum()) - s_total0) / max(s_total0, 1e-12),
+                    "cash_rel": abs(float(C.sum()) - c_total0) / max(c_total0, 1e-12)}}
 
     def _round(self, x):
         return max(round(x / self.p.tick) * self.p.tick, self.p.tick)
