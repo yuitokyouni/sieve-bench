@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>sieve-bench の数学的基礎</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm 20mm 20mm; }
+
+  :root {
+    --ink: #14181f;
+    --muted: #55606f;
+    --rule: #c8d0da;
+    --rule-soft: #e3e8ee;
+    --accent: #1f5fa8;
+    --signal: #b8471f;
+    --panel: #f5f7fa;
+    --jp: "IPAGothic", "IPAPGothic", sans-serif;
+    --lat: "Liberation Sans", "DejaVu Sans", sans-serif;
+    --math: "Liberation Serif", "DejaVu Serif", serif;
+    --mono: "DejaVu Sans Mono", "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--lat), var(--jp);
+    font-size: 10.2pt;
+    line-height: 1.85;
+    color: var(--ink);
+    text-align: justify;
+  }
+
+  h1 { font-size: 22pt; line-height: 1.35; margin: 0 0 2mm; letter-spacing: .01em; }
+  h2 {
+    font-size: 14pt; line-height: 1.4; margin: 0 0 4mm;
+    padding-bottom: 2mm; border-bottom: 1.2pt solid var(--ink);
+    break-after: avoid;
+  }
+  h3 {
+    font-size: 11pt; margin: 7mm 0 2mm; color: var(--accent);
+    break-after: avoid;
+  }
+  h4 { font-size: 10.2pt; margin: 5mm 0 1mm; break-after: avoid; }
+  p { margin: 0 0 3mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+
+  .chapter { break-before: page; }
+  .lead { color: var(--muted); font-size: 9.6pt; margin-bottom: 5mm; }
+
+  /* ---------------------------------------------------------- 表紙 */
+  .cover { border-bottom: 2.5pt solid var(--ink); padding-bottom: 6mm; margin-bottom: 6mm; }
+  .cover .kicker {
+    font-family: var(--mono); font-size: 8pt; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 3mm;
+  }
+  .cover .sub { font-size: 11pt; color: var(--muted); margin-top: 2mm; }
+
+  /* ---------------------------------------------------------- 数式 */
+  .math, var, .v { font-family: var(--math); font-style: italic; }
+  .eq {
+    font-family: var(--math);
+    text-align: center;
+    margin: 4mm 0;
+    font-size: 11pt;
+    break-inside: avoid;
+  }
+  .eq .note { font-family: var(--lat), var(--jp); font-style: normal;
+              font-size: 8.6pt; color: var(--muted); display: block; margin-top: 1mm; }
+  .up { font-style: normal; }
+
+  /* ---------------------------------------------------------- 箱 */
+  .box {
+    background: var(--panel);
+    border: .6pt solid var(--rule);
+    padding: 3.5mm 4.5mm;
+    margin: 4mm 0;
+    break-inside: avoid;
+  }
+  .box .t {
+    font-family: var(--mono); font-size: 8pt; letter-spacing: .1em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 1.5mm;
+  }
+  .box p:last-child, .box pre:last-child { margin-bottom: 0; }
+
+  .key {
+    border-left: 2.5pt solid var(--signal);
+    padding: 1mm 0 1mm 4mm;
+    margin: 4mm 0;
+    break-inside: avoid;
+  }
+  .key p:last-child { margin-bottom: 0; }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 8.4pt;
+    line-height: 1.6;
+    background: var(--panel);
+    border: .6pt solid var(--rule-soft);
+    padding: 3mm;
+    margin: 3mm 0;
+    overflow-x: auto;
+    white-space: pre;
+    break-inside: avoid;
+  }
+  code { font-family: var(--mono); font-size: .9em; }
+
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 8.8pt; margin: 3mm 0; break-inside: avoid;
+  }
+  th, td { padding: 1.4mm 2mm; text-align: right; border-bottom: .5pt solid var(--rule-soft); }
+  th { border-bottom: 1pt solid var(--rule); color: var(--muted); font-weight: normal; }
+  th:first-child, td:first-child { text-align: left; }
+  td.num { font-family: var(--mono); }
+  .hit { color: var(--signal); font-weight: bold; }
+  .dim { color: var(--muted); }
+
+  b, strong { font-weight: bold; }
+  .term { font-weight: bold; color: var(--accent); }
+
+  figcaption { font-size: 8.6pt; color: var(--muted); margin-top: 1.5mm; }
+  .toc { font-size: 9.4pt; }
+  .toc div { display: flex; gap: 3mm; margin-bottom: 1.2mm; }
+  .toc .n { font-family: var(--mono); color: var(--muted); width: 8mm; flex: none; }
+</style>
+</head>
+<body>
+
+<!-- ================================================================= 表紙 -->
+<div class="cover">
+  <div class="kicker">sieve-bench / mathematical foundations</div>
+  <h1>この研究で使っている数学と、<br>それが何のためにあるのか</h1>
+  <div class="sub">前提知識は高校数学まで。記号は出てきた順に全部定義します。</div>
+</div>
+
+<p>この文書は、<code>sieve-bench</code> が使っている数学的な道具を、<b>使う理由から順に</b>説明します。
+数学そのものの解説書ではなく、<b>「なぜこの道具でないと駄目なのか」</b>を各章で1つずつ潰していく形にしてあります。</p>
+
+<p>各章は次の構成です。</p>
+<ul>
+  <li><b>何に困っているか</b> — 道具を導入する動機</li>
+  <li><b>定義</b> — 記号を導入する。数値例を必ず1つ付ける</li>
+  <li><b>この研究での使われ方</b> — リポジトリのどのファイルの、どの数字になったか</li>
+</ul>
+
+<div class="box">
+  <div class="t">目次</div>
+  <div class="toc">
+    <div><span class="n">1</span><span>統計量とは「圧縮」である — 何かは必ず捨てられる</span></div>
+    <div><span class="n">2</span><span>不変性 — 「原理的に見えない」の正体</span></div>
+    <div><span class="n">3</span><span>分布を比べる — 経験分布関数と KS 統計量</span></div>
+    <div><span class="n">4</span><span>その差は偶然か — 置換検定と p 値</span></div>
+    <div><span class="n">5</span><span>交換可能性が壊れると何が起きるか — 依存と実効標本数</span></div>
+    <div><span class="n">6</span><span>たくさん検定するとどうなるか — 多重比較</span></div>
+    <div><span class="n">7</span><span>周辺分布と同時分布 — energy distance</span></div>
+    <div><span class="n">8</span><span>交絡と ablation — 「なぜそうなったか」を言うために</span></div>
+    <div><span class="n">9</span><span>付録：GARCH 族の式</span></div>
+    <div><span class="n">10</span><span>用語のまとめ</span></div>
+  </div>
+</div>
+
+<div class="key">
+  <p><b>全体の見取り図。</b>検証は3層に分かれます。<b>上の層ほど強く、そして安い。</b></p>
+  <pre>① 見えるのか？          定義から分かる。シミュレーション不要      → 2章
+                        不変な統計量は、標本をいくら増やしても差を返さない
+
+② 有限標本で区別できるか？ 機構を1つだけ抜いて比べる                 → 3・8章
+                        「理論上見える」と「実際に見破れる」の間を埋める
+
+③ その判定は信用できるか？ 帰無仮説が真なのに何%棄却するか            → 4・5・6章
+                        統計量が良くても、採点手続きが誤答するなら無意味</pre>
+</div>
+
+
+<!-- ============================================================ 1. 圧縮 -->
+<div class="chapter">
+<h2>1. 統計量とは「圧縮」である — 何かは必ず捨てられる</h2>
+
+<h3>何に困っているか</h3>
+<p>1000営業日ぶんのリターン系列があります。これは 1000 個の数です。
+そこから「尖度は 4.2 だった」と報告する。<b>1000 個が 1 個になりました。</b>
+差し引き 999 個ぶんの情報はどこかへ消えています。</p>
+
+<p>問題は、<b>何が消えたのかを普通は誰も確かめないこと</b>です。
+消えたものが、たまたま検証したかった性質だったら、その検証は最初から成立しません。</p>
+
+<h3>定義</h3>
+<p>系列全体の集合を <span class="math">X</span>、実数を <span class="math">ℝ</span> と書きます。
+<span class="term">統計量</span>とは、系列を1つの数に落とす写像のことです。</p>
+
+<div class="eq">
+  T : X → ℝ
+  <span class="note">系列 <span class="math">x</span> を入れると、数 <span class="math">T(x)</span> が1つ出てくる</span>
+</div>
+
+<p>本ベンチには 16 個あるので、それぞれ
+<span class="math">T<sub class="up">1</sub>, T<sub class="up">2</sub>, …, T<sub class="up">16</sub></span> と番号を振ります。
+まとめて<span class="term">バッテリー</span>（電池ではなく「一式」の意味）と呼び、
+<span class="math">B = {T<sub class="up">1</sub>, …, T<sub class="up">16</sub>}</span> と書きます。</p>
+
+<div class="box">
+  <div class="t">具体例</div>
+<pre>T_lev(x) = リターン r_t と、その後の |r| との相関   → leverage
+T_kurt(x) = 標準化したリターンの4乗平均 − 3          → excess_kurtosis</pre>
+  <p>どちらも 1000 個の数を受け取って、1 個の数を返します。</p>
+</div>
+
+<h3>この研究での使われ方</h3>
+<p>実データの窓 124 本それぞれに <span class="math">T</span> を当てると、数が 124 個できます。
+生成器の実行 200 本に当てると、数が 200 個できます。
+<b>この2つの集まりがどれだけ違うか</b>が、本研究の測っているものです。</p>
+
+<p>ここで一度立ち止まる必要があります。
+<b>そもそも <span class="math">T</span> がその違いを保存していなければ、
+いくら比べても差は出ません。</b>次章がそれです。</p>
+</div>
+
+
+<!-- ========================================================== 2. 不変性 -->
+<div class="chapter">
+<h2>2. 不変性 — 「原理的に見えない」の正体</h2>
+
+<h3>何に困っているか</h3>
+<p>ある ABM（エージェントベース・モデル）が、実データの 10 倍の右肩上がりを持っていました。
+累積リターンの図を描くと、ほぼ直線のランプで、<b>目で見れば一発で分かる異常</b>です。
+ところが当時の 14 個の統計量は、どれ一つ検出しませんでした。</p>
+
+<p>これが「たまたま見逃した」なのか「原理的に見えなかった」なのかは、
+<b>まったく違う話</b>です。前者はデータを増やせば直ります。後者は永久に直りません。
+そして<b>どちらなのかは、定義を見れば分かります。</b></p>
+
+<h3>定義</h3>
+<p>系列に何か操作を加えることを考えます。この操作を <span class="term">変換</span> と呼び、
+<span class="math">g</span> と書きます。<span class="math">gx</span> は「<span class="math">x</span> に <span class="math">g</span> を施した系列」です。</p>
+
+<div class="box">
+  <div class="t">本研究で宣言している6つの変換</div>
+  <table>
+    <tr><th>名前</th><th style="text-align:left">操作</th><th style="text-align:left">対応する性質</th></tr>
+    <tr><td>location</td><td style="text-align:left"><span class="math">x → x + c</span></td><td style="text-align:left">位置・ドリフト</td></tr>
+    <tr><td>scale</td><td style="text-align:left"><span class="math">x → a·x</span></td><td style="text-align:left">尺度・ボラティリティ水準</td></tr>
+    <tr><td>sign</td><td style="text-align:left"><span class="math">x → −x</span></td><td style="text-align:left">上げ下げの非対称</td></tr>
+    <tr><td>reversal</td><td style="text-align:left">系列を逆順に</td><td style="text-align:left">時間の向き</td></tr>
+    <tr><td>shuffle</td><td style="text-align:left">ランダムに並べ替え</td><td style="text-align:left">時間の並び全体</td></tr>
+    <tr><td>tail</td><td style="text-align:left"><span class="math">x → sign(x)|x|<sup class="up">1.3</sup></span></td><td style="text-align:left">裾の重さ</td></tr>
+  </table>
+  <p class="dim" style="margin-top:2mm; font-size:9pt">網羅が目的ではありません。<b>検証したい性質に対応する変換を、先に宣言しておく</b>ことが目的です。</p>
+</div>
+
+<p>さて、統計量 <span class="math">T</span> が変換 <span class="math">g</span> に対して
+<span class="term">不変</span>である、とは次のことです。</p>
+
+<div class="eq">
+  T(gx) = T(x)　　（<b>すべての</b> <span class="math">x</span> について）
+  <span class="note">「たまたま今回のデータで一致した」ではなく、どんな系列でも必ず一致する</span>
+</div>
+
+<h4>数値例 ① — 平均を引く統計量は、位置に不変</h4>
+<p>短い系列で実際に確かめます。<span class="math">x = (1, −2, 3, −1, 4)</span>、
+これに <span class="math">c = 10</span> を足します。</p>
+
+<pre>x       = ( 1, −2,  3, −1,  4)     平均 =  1
+x + 10  = (11,  8, 13,  9, 14)     平均 = 11
+
+x − 平均       = ( 0, −3,  2, −2,  3)
+(x+10) − 平均  = ( 0, −3,  2, −2,  3)      ← 完全に同じ</pre>
+
+<p>足した 10 は、平均を引く段階で <b>きれいに打ち消されます</b>。
+式で書けば <span class="math">(x<sub class="up">t</sub>+c) − (x̄+c) = x<sub class="up">t</sub> − x̄</span> です。
+尖度も歪度も、この「平均を引いた列」だけから計算されるので、
+<b>足した 10 は最初の一手で消えてしまい、その先には一切届きません。</b></p>
+
+<p>これは実験結果ではありません。<b>定義から必ずそうなります。</b>
+データを 100 倍にしても、検定を改良しても、Monte Carlo を何億回回しても変わりません。</p>
+
+<h4>数値例 ② — 絶対値を経由すると、不変ではなくなる</h4>
+<p>同じ系列で、今度は絶対値を取ってみます。</p>
+
+<pre>|x|      = ( 1,  2,  3,  1,  4)
+|x + 10| = (11,  8, 13,  9, 14)     ← 全然違う列になった</pre>
+
+<p><span class="math">|x+c| ≠ |x|+c</span> なので、絶対値を経由する統計量は<b>位置に不変ではありません</b>。
+実測すると <code>acf_abs_1</code> は −0.76 から −0.62 に動きました。<b>反応しています。</b></p>
+
+<div class="key">
+  <p><b>ここが決定的な区別です。</b></p>
+  <p><b>厳密に不変</b>なら、検出力は<b>定義上ゼロ</b>。データを増やしても永久に見えません。<br>
+  <b>反応するが小さい</b>なら、検出力が<b>低いだけ</b>。標本を増やせば見えるようになりえます。</p>
+</div>
+
+<h3>バッテリー全体の不変性</h3>
+<p>統計量ごとに、不変な変換の集まりを <span class="math">G<sub class="up">j</sub></span> と書きます。</p>
+
+<div class="eq">
+  G<sub class="up">j</sub> = { g : T<sub class="up">j</sub>(gx) = T<sub class="up">j</sub>(x)　すべての <span class="math">x</span> で }
+</div>
+
+<p>バッテリー全体が不変な変換は、その<b>共通部分</b>（全部に共通して入っているもの）です。</p>
+
+<div class="eq">
+  G<sub class="up">B</sub> = G<sub class="up">1</sub> ∩ G<sub class="up">2</sub> ∩ … ∩ G<sub class="up">16</sub>
+  <span class="note">∩ は「両方に入っているものだけ集める」という記号</span>
+</div>
+
+<p><b>なぜ共通部分なのか。</b>16 個のうち 1 個でも反応するなら、その 1 個で気づける可能性があります。
+「バッテリー全体に見えない」と言うためには、<b>16 個すべてが同時に不変</b>でなければなりません。</p>
+
+<p><span class="math">g ∈ G<sub class="up">B</sub></span>（<span class="math">g</span> が共通部分に入っている）なら、</p>
+
+<div class="eq">
+  ( T<sub class="up">1</sub>(gx), …, T<sub class="up">16</sub>(gx) ) = ( T<sub class="up">1</sub>(x), …, T<sub class="up">16</sub>(x) )
+  <span class="note">バッテリーから見て <span class="math">x</span> と <span class="math">gx</span> は<b>同じ物</b>である</span>
+</div>
+
+<h3>この研究での使われ方 — <code>invariance.py</code></h3>
+<p>16 個 × 6 変換の 96 セルを、実データ 124 窓で実際に走らせて分類しました。
+相対変化が計算機精度なら「厳密に不変」、窓間のばらつきの 5% 未満なら「ほぼ不変」、それ以上なら「反応」です。</p>
+
+<table>
+  <tr><th>変換</th><th>厳密に不変な統計量の数</th><th style="text-align:left">意味</th></tr>
+  <tr><td>scale</td><td class="num">16 / 16</td><td style="text-align:left">全部不変。<b>意図的にそう設計した</b></td></tr>
+  <tr><td>reversal</td><td class="num hit">13 / 16</td><td style="text-align:left">時間の向きが見えるのは3個だけ</td></tr>
+  <tr><td>sign</td><td class="num">10 / 16</td><td style="text-align:left">上げ下げの非対称が見えない</td></tr>
+  <tr><td>location</td><td class="num">6 / 16</td><td style="text-align:left">平均を引く6個</td></tr>
+  <tr><td>shuffle</td><td class="num">5 / 16</td><td style="text-align:left">純粋に分布の形だけを見る5個</td></tr>
+  <tr><td>tail</td><td class="num">0 / 16</td><td style="text-align:left">全部が反応する</td></tr>
+</table>
+
+<div class="key">
+  <p><b>この監査は、私が書いた説明を1つ否定しました。</b></p>
+  <p>「14 個すべてが位置に不変だったからドリフトは原理的に見えなかった」と一度書きました。
+  <b>測ったら違いました。</b>位置に厳密に不変なのは 6 個だけで、
+  <code>multiscaling</code> は四分位幅と同じくらい（0.97）動きます。
+  <b>バッテリー全体が厳密に不変なのは <code>scale</code> だけ</b>——意図して入れた不変性だけです。</p>
+  <p>つまりドリフトは<b>原理的には見えた</b>。見なかっただけです。
+  「不変性」による説明は、より洗練された言い訳でした。</p>
+</div>
+
+<h3>それでも監査は、もっと強いものを見つけた</h3>
+<p>不変性の判定に<b>シミュレーションは要りません</b>。定義だけで決まります。
+ということは、<b>他人の論文にもそのまま当てられます。</b></p>
+
+<p>文献監査の該当論文（本文が取れて、市場シミュレーションで、スタイライズドファクツに言及しているもの）が
+挙げている統計量の組み合わせについて、その共通不変集合を計算しました。</p>
+
+<table>
+  <tr><th>その性質を原理的に検出できない論文</th><th>言及1回以上</th><th>言及3回以上</th></tr>
+  <tr><td>時間の向き（reversal）</td><td class="num hit">34 / 40（85%）</td><td class="num hit">21 / 26（81%）</td></tr>
+  <tr><td>上げ下げの非対称（sign）</td><td class="num">10 / 40（25%）</td><td class="num">2 / 26（8%）</td></tr>
+</table>
+
+<p><b>8割の論文が、系列を逆再生しても同じ値を返す組み合わせを使っています。</b>
+「レバレッジ効果はあまり報告されない」という統計的な観察が、
+<b>「それらの論文には時間の非対称性が検出できない」という証明可能な主張</b>に変わります。</p>
+
+<p class="dim">（監査は「言及」を数えているので「報告」より広い。したがってこの判定は保守側です——
+実際に報告している統計量はもっと少ないはずで、盲目な変換はもっと多い可能性が高い。）</p>
+</div>
+
+
+<!-- ============================================================== 3. KS -->
+<div class="chapter">
+<h2>3. 分布を比べる — 経験分布関数と KS 統計量</h2>
+
+<h3>何に困っているか</h3>
+<p>実データ側から 124 個、生成器側から 200 個の数が出ました。
+この2つの<b>集まり</b>がどれだけ違うかを、1つの数で言いたい。</p>
+
+<p>平均を比べるだけでは足りません。<b>平均が同じで形だけが違う</b>ことがあるからです。
+実際 v0.1 では AUC という指標を使っていて、これは位置のずれしか見ないため、
+中心が同じで分散が5倍違う2つの分布に、ほぼゼロを返していました。</p>
+
+<h3>定義</h3>
+<p>まず <span class="term">経験分布関数</span>（ECDF）。数の集まり <span class="math">a</span> に対して、</p>
+
+<div class="eq">
+  F<sub class="up">a</sub>(t) = （<span class="math">a</span> の中で <span class="math">t</span> 以下だったものの割合）
+</div>
+
+<p>要するに<b>「この値以下が何割か」を返す関数</b>です。必ず 0 から始まり 1 で終わります。</p>
+
+<div class="box">
+  <div class="t">数値例</div>
+  <p><span class="math">a = (1, 2, 5)</span> と <span class="math">b = (3, 4, 6)</span> を比べます。</p>
+<pre>  t      F_a(t)   F_b(t)   |差|
+  0      0.000    0.000    0.000
+  1      0.333    0.000    0.333
+  2      0.667    0.000    0.667   ← 最大
+  3      0.667    0.333    0.333
+  4      0.667    0.667    0.000
+  5      1.000    0.667    0.333
+  6      1.000    1.000    0.000</pre>
+  <p>最大の差は <b>0.667</b>。これが KS 統計量です。</p>
+</div>
+
+<p>一般に <span class="term">2標本 Kolmogorov–Smirnov 統計量</span> は</p>
+
+<div class="eq">
+  KS = max<sub class="up">t</sub> | F<sub class="up">a</sub>(t) − F<sub class="up">b</sub>(t) |
+  <span class="note">2本の累積分布関数の、<b>縦の隔たりが最も大きいところ</b></span>
+</div>
+
+<p>値は 0（完全に重なる）から 1（まったく重ならない）まで。
+<b>位置がずれても、幅が違っても、形が違っても反応します。</b>ここが AUC との違いです。</p>
+
+<h3>この研究での使われ方</h3>
+<p>識別行列の各セルが、この KS です。同じ2つのデータでも、どの統計量で見るかで値が変わります。</p>
+
+<table>
+  <tr><th>見る統計量</th><th>実データ 124 窓の中央値</th><th>GARCH 200 実行の中央値</th><th>KS</th></tr>
+  <tr><td>leverage</td><td class="num">−0.099</td><td class="num">−0.002</td><td class="num hit">0.93</td></tr>
+  <tr><td>acf_abs_1</td><td class="num">+0.193</td><td class="num">+0.202</td><td class="num">0.12</td></tr>
+</table>
+
+<p><b>同じ実データと同じ GARCH です。</b>違うのは、それを1つの数に落とす統計量だけ。
+レバレッジ効果で見れば分布はほとんど重ならず、絶対値リターンの自己相関で見ればほぼ完全に重なります。</p>
+</div>
+
+
+<!-- ========================================================= 4. 置換検定 -->
+<div class="chapter">
+<h2>4. その差は偶然か — 置換検定と p 値</h2>
+
+<h3>何に困っているか</h3>
+<p>KS = 0.12 が出ました。これは「差が無い」なのか、「本当は差があるが小さい」なのか。</p>
+<p>実はどちらとも言えません。<b>124 個と 200 個の数なら、まったく同じ源から取っても KS は偶然それなりの値になる</b>からです。
+比べる相手が要ります。</p>
+
+<h3>定義</h3>
+<p>やることは単純です。</p>
+
+<ol>
+  <li>124 個と 200 個を1つにまとめて 324 個にする</li>
+  <li><b>どれが実データでどれが生成器かのラベルだけを、ランダムに貼り替える</b></li>
+  <li>貼り替えた状態で KS を計算する</li>
+  <li>2〜3 を 2000 回くり返す → KS が 2000 個できる</li>
+  <li>実際の KS 以上だったものの割合を数える</li>
+</ol>
+
+<p>この最後の割合が <span class="term">p 値</span> です。</p>
+
+<div class="eq">
+  p = （ラベルを貼り替えて作った 2000 個の KS のうち、実際の KS 以上だった割合）
+</div>
+
+<div class="box">
+  <div class="t">p 値の読み方（と、読んではいけない読み方）</div>
+  <p><b>p = 0.02 の意味：</b>「ラベルを適当に貼り替えても、2% はこのくらいの隔たりが出る」。
+  つまり<b>偶然でも起こりうる程度かどうか</b>の目安です。</p>
+  <p><b>p 値ではないもの：</b></p>
+  <ul>
+    <li><b>信頼区間ではありません。</b>区間ではなく1つの割合です</li>
+    <li><b>「仮説が正しい確率」ではありません。</b>仮説が正しいと<b>仮定した上で</b>、
+        今回くらいの差が出る頻度です</li>
+    <li><b>p が大きい＝差が無い、ではありません。</b>「この標本規模では検出できなかった」までです</li>
+  </ul>
+</div>
+
+<h3>この手続きが前提にしていること</h3>
+<p>ラベルを貼り替えてよいのは、<b>貼り替えても分布が変わらないとき</b>だけです。
+これを <span class="term">交換可能性</span> と言います。</p>
+
+<div class="eq">
+  「どれが実データ側の値か」に意味が無いなら、<br>貼り替えても同じ分布になるはずだ
+  <span class="note">これが成り立たないと、以下の p 値は全部無効になる</span>
+</div>
+
+<p>324 個の値が<b>互いに独立</b>なら、これは成り立ちます。次章で見るとおり、成り立っていませんでした。</p>
+</div>
+
+
+<!-- ========================================================== 5. 依存 -->
+<div class="chapter">
+<h2>5. 交換可能性が壊れると何が起きるか — 依存と実効標本数</h2>
+
+<h3>何に困っているか</h3>
+<p>実データの窓 124 本は、こう作られています。</p>
+<ul>
+  <li>長さ 1000 営業日（約4年）の窓を、<b>250 日ずつずらして</b>切り出す</li>
+  <li>それを 6 つの株価指数それぞれで行い、全部プールする</li>
+</ul>
+
+<p>すると、</p>
+<ul>
+  <li><b>隣の窓とは 1000 日のうち 750 日が同じデータ</b>です（75% 共有）</li>
+  <li><b>2008年の窓は 6 指数すべてに同時に現れます。</b>同じ暴落を 6 回数えている</li>
+</ul>
+
+<p>つまり <b>124 本は 124 個ぶんの独立な情報を持っていません。</b>
+それなのに 1 本ずつ貼り替えると、この重なりが消えてしまいます。</p>
+
+<h3>どれだけ壊れるか — 測った</h3>
+<p><code>selftest.py</code> は、<b>答えが分かっている人工データ</b>で誤り率を直接測ります。
+実データと同じ形の依存を持つ標本を、<b>同じ分布から作った独立な標本</b>と比べる。
+差は無いので、5% 水準の棄却率は 5% であるべきです。</p>
+
+<table>
+  <tr><th>同時期の窓どうしの似かた</th><th>1本ずつ貼り替え</th><th>ブロックごと貼り替え</th><th>ブロックを引き直す</th></tr>
+  <tr><td>ρ = 0.0（ばらばら）</td><td class="num">3.7%</td><td class="num">4.7%</td><td class="num">9.3%</td></tr>
+  <tr><td>ρ = 0.3</td><td class="num hit">36.0%</td><td class="num">11.3%</td><td class="num">10.0%</td></tr>
+  <tr><td>ρ = 0.6（よく似ている）</td><td class="num hit">55.7%</td><td class="num">12.7%</td><td class="num">11.3%</td></tr>
+</table>
+
+<p><b>名目 5% に対して実際は 56%。</b>差が無いのに、10 回に 5〜6 回「差がある」と答えていました。
+これは「p 値がちょっと甘い」ではなく、<b>検定としてほぼ壊れている</b>水準です。</p>
+
+<h3>実効標本数 — 見かけと中身の差</h3>
+<p>依存があると、標本数は見かけより少なくなります。これを表すのが
+<span class="term">級内相関</span> <span class="math">ρ</span> と <span class="term">デザイン効果</span> です。</p>
+
+<div class="eq">
+  deff = 1 + (m − 1)·ρ　　　　n<sub class="up">実効</sub> = n / deff
+  <span class="note"><span class="math">m</span> はブロックあたりの本数、<span class="math">ρ</span> はブロック内での似かた（0〜1）</span>
+</div>
+
+<div class="box">
+  <div class="t">数値例</div>
+<pre>ブロックあたり m = 20 本のとき
+
+  ρ = 0     deff = 1.00    124 本 → 124 本   （独立なら減らない）
+  ρ = 0.25  deff = 5.75    124 本 →  22 本
+  ρ = 0.6   deff = 12.40   124 本 →  10 本</pre>
+  <p>実測した中央値は <b>23 本</b>でした。名目 124 本に対して <b>5.5 倍の希釈</b>です。</p>
+</div>
+
+<h3>交換の単位を上げる</h3>
+<p>直し方は、<b>貼り替える単位を大きくする</b>ことです。窓 1 本ではなく、
+<b>同じ時期の窓をまとめた「暦ブロック」ごと</b>動かす。
+そうすればブロック内の重なりは壊れません。</p>
+
+<p>25 年を約4年の窓で見ると、<b>暦ブロックは 6 個</b>できます。</p>
+
+<h3>それでも名目には届かない — ただし「手法が無い」わけではない</h3>
+<p>ブロック法でも 10〜13% あります。ここは正確に言う必要があります。</p>
+
+<div class="key">
+  <p><b>依存を扱う手法は存在します。</b>暦ブロック単位の randomization inference、
+  block bootstrap、wild cluster bootstrap、HAC、モデルベースの推論など。
+  本ベンチが測ったのは<b>そのうち2つだけ</b>です。</p>
+  <p>消せないのは<b>手法の側ではなく情報量の側</b>です。25 年を4年窓で見れば独立な暦は 6 個しかなく、
+  どの手法もそれ以上の情報を作れません。</p>
+  <p><b>正確には——補正法が無いのではなく、正しく補正すると、
+  元々データに無かった独立情報の欠如が露呈する。</b></p>
+</div>
+
+<p>クラスタ数が 20 を切ると過剰棄却するのは、計量経済で広く知られています
+（Cameron, Gelbach &amp; Miller 2008）。<b>6 個はその領域の深いところ</b>です。</p>
+
+<h3>直せないなら、閾値のほうを動かす</h3>
+<p>誤り率が測れているなら、<b>読み替え表</b>を作ればよい。</p>
+
+<table>
+  <tr><th>同時期の窓どうしの似かた</th><th>α=0.05</th><th>α=0.02</th><th>α=0.01</th><th>α=0.005</th></tr>
+  <tr><td>ρ = 0.2</td><td class="num">12.0%</td><td class="num">5.2%</td><td class="num hit">3.2%</td><td class="num">2.2%</td></tr>
+  <tr><td>ρ = 0.4</td><td class="num">12.0%</td><td class="num">6.6%</td><td class="num hit">4.2%</td><td class="num">1.8%</td></tr>
+  <tr><td>ρ = 0.6</td><td class="num">10.6%</td><td class="num">5.2%</td><td class="num hit">4.8%</td><td class="num">3.0%</td></tr>
+</table>
+
+<p><b>「p &lt; 0.01 と出たとき、本当は 3〜5% の確率で間違っている」。</b>
+だから 0.01 を 5% 水準の判定線として使います。</p>
+
+<p><b>ただし代償があり、それも測れます。</b>この判定線での検出力は、
+平均が 0.5σ ずれた相手で 32%、標準偏差が 1.5 倍ずれた相手では <b>8.7%</b> しかありません。
+<b>差が出ないことは、統計量が鈍い証拠になりません。</b></p>
+
+<h3>独立情報の不足は、p 値の刻みにも出る</h3>
+<p>実データ同士を比べるとき（米欧 vs アジアなど）、<b>両側が同じ暦ブロックを共有します</b>。
+2008年の米欧と 2008年のアジアは 1 つのショックであって、独立な 2 単位ではありません。</p>
+
+<p>正しい設計は、<b>ブロックごとに群ラベルを入れ替える</b>ことです。そして——</p>
+
+<div class="eq">
+  ブロックが6個 → 割り当ては 2<sup class="up">6</sup> = <b>64 通りしかない</b>
+  <span class="note">各ブロックについて「入れ替える／入れ替えない」の2択が6回</span>
+</div>
+
+<p>64 通りしかないなら、p 値が取りうる値は 1/64 ≒ <b>0.016 刻み</b>です。</p>
+
+<table>
+  <tr><th>参照対照</th><th>設計</th><th>割り当て</th><th>p の刻み</th><th>実際の最小 p</th></tr>
+  <tr><td>米欧 vs アジア</td><td>対応あり</td><td class="num">64</td><td class="num">0.016</td><td class="num">0.031</td></tr>
+  <tr><td>2014年 前 vs 後</td><td>対応なし</td><td class="num">35</td><td class="num">0.029</td><td class="num">0.030</td></tr>
+  <tr><td>S&amp;P500 vs FTSE</td><td>対応あり</td><td class="num">64</td><td class="num">0.016</td><td class="num">0.156</td></tr>
+  <tr><td>S&amp;P500 を二分</td><td>対応あり</td><td class="num">64</td><td class="num">0.016</td><td class="num">0.125</td></tr>
+</table>
+
+<div class="key">
+  <p><b>どの対照も、判定線 p &lt; 0.01 に構造上到達できません。</b>最小可能値が 0.016 だからです。
+  検定の欠陥ではなく、<b>独立な暦が6つしかないという事実が、そのまま p 値の刻みとして表に出ている</b>。</p>
+</div>
+
+<p class="dim">（なお主検定〈実データ vs 生成器〉では割り当てが 8008 通りあるので、
+刻みは 0.0001 で問題になりません。<b>同じ 6 ブロック制約が、設計によって
+「p の粗さ」と「検出力の低さ」という別の顔で出る</b>ということです。）</p>
+</div>
+
+
+<!-- ========================================================= 6. 多重比較 -->
+<div class="chapter">
+<h2>6. たくさん検定するとどうなるか — 多重比較</h2>
+
+<h3>何に困っているか</h3>
+<p>16 統計量 × 8 生成器 = <b>128 セル</b>あります。各セルを 5% 水準で見ると、
+<b>差が1つも無くても、期待値として約 6 セルが「有意」になります</b>（128 × 0.05 = 6.4）。</p>
+
+<h3>Benjamini–Hochberg 法</h3>
+<p>128 個の p 値を小さい順に並べ、<span class="math">i</span> 番目の p 値に対して
+<span class="math">p<sub class="up">(i)</sub> × 128 / i</span> を計算し、後ろから最小値を取っていく。
+これが <span class="term">q 値</span>（FDR、偽発見率）です。</p>
+
+<p>意味は「有意と判定したもののうち、間違いが平均で何割か」。
+q &lt; 0.05 なら、拾ったものの 5% 程度が誤りという水準です。</p>
+
+<h3>補正が要らない場合もある</h3>
+<p>「<b>この統計量は全 8 生成器を落とせる</b>」という主張には、多重比較の補正は<b>要りません</b>。</p>
+
+<p>理由：この主張が成り立つには <b>8 個すべてが有意</b>でなければなりません。
+たくさん試して1つでも当たれば良い、という構造ではなく、<b>全部当たれ</b>という構造です。
+これは <span class="term">交差–合併検定</span> と呼ばれ、<b>補正なしでもともと水準を超えません</b>
+（要求が厳しい側なので、むしろ保守的）。</p>
+
+<div class="key">
+  <p><b>補正が要るのは「どこかに有意差がある」を探す側だけ。</b>
+  「全部に有意差がある」を要求する側は、もともと安全側にいます。</p>
+</div>
+</div>
+
+
+<!-- ======================================================= 7. energy -->
+<div class="chapter">
+<h2>7. 周辺分布と同時分布 — energy distance</h2>
+
+<h3>何に困っているか</h3>
+<p>16 個の統計量を1つずつ比べて、全部「差なし」だったとします。<b>それで安心してよいか。</b></p>
+
+<p>いけません。<b>1つずつ見れば合っているのに、組み合わせが現実とまったく違う</b>ことがあるからです。</p>
+
+<div class="box">
+  <div class="t">直感的な例</div>
+  <p>身長と体重を考えます。ある集団 A と B で、身長の分布は同じ、体重の分布も同じ。
+  <b>それでも A では背が高い人ほど重く、B では背が高い人ほど軽い</b>かもしれません。</p>
+  <p>1変数ずつ見るかぎり（＝<b>周辺分布</b>）差はゼロ。
+  2変数の組として見て（＝<b>同時分布</b>）初めて差が出ます。</p>
+</div>
+
+<h3>定義</h3>
+<p><span class="term">energy distance</span> は、多次元のまま2つの集まりを比べる指標です。
+各点を 16 次元のベクトル（16 統計量の値を並べたもの）と見て、点どうしの距離だけを使います。</p>
+
+<div class="eq">
+  E = 2·（A と B の間の平均距離） − （A 内の平均距離） − （B 内の平均距離）
+</div>
+
+<p>読み方は素直です。<b>「よそ者との距離」が「身内どうしの距離」より大きければ、
+2 つの集まりは離れている。</b>同じ分布から来ているなら、この差は 0 になります。</p>
+
+<h3>この研究での使われ方</h3>
+<p>16 個の周辺分布を個別に見る層（診断層）とは別に、
+<b>16 次元ベクトル全体を1つの検定にかける層</b>（総合層）を置いています。</p>
+
+<p>結果として、<b>energy 検定は 8 生成器すべてを落とします</b>。個別の統計量では素通りする
+GJR や EGARCH も含めてです。<b>個々の性質は合っていても、16 個の組み合わせ方が現実と違う。</b></p>
+
+<p>ただし個別の KS も残してあります。総合スコアだけでは<b>何が壊れているか</b>が分からないからです。</p>
+</div>
+
+
+<!-- ======================================================== 8. ablation -->
+<div class="chapter">
+<h2>8. 交絡と ablation — 「なぜそうなったか」を言うために</h2>
+
+<h3>何に困っているか</h3>
+<p>「実データ vs GJR-GARCH」で <code>leverage</code> の KS が 0.61 出ました。
+これを<b>「GJR が非対称性を持たないから 0.61 になった」と言ってよいか。</b></p>
+
+<p>言えません。2つを比べたとき、<b>同時に何もかも違う</b>からです。</p>
+
+<div class="box">
+  <div class="t">0.61 に混ざっているもの</div>
+  <ul style="margin-bottom:0">
+    <li>GJR が実データの非対称性を持たないこと　← <b>測りたいもの</b></li>
+    <li>ボラティリティ水準・裾の重さ・持続性の違い</li>
+    <li>S&amp;P500 と日経・ハンセンなど、市場ごとの性質の違い</li>
+    <li>構造変化、推定パラメータのずれ</li>
+  </ul>
+</div>
+
+<p>これが <span class="term">交絡</span> です。原因の候補が複数あって、結果だけからはどれか決められない状態。</p>
+
+<h3>対処 ① — 揃えられるものは揃える</h3>
+<p>v0.2 までは GARCH 族を <b>S&amp;P500 だけ</b>に当て、それを 6 指数すべての基準線に使っていました。
+v0.3 では<b>指数ごとにその指数自身のパラメータを当て</b>、生成もその指数のパラメータで行います。
+市場間の違いが<b>両側に等しく入る</b>ので、差として残るものが機構に近づきます。</p>
+
+<p><b>結論が1つ変わりました。</b>v0.2 は「<code>leverage</code> だけが全8生成器を落とした」でしたが、
+指数ごとに当て直すと <code>block_bootstrap</code> に対して判定線を越えなくなり、
+<b>全8を落とせる統計量は無くなりました。</b></p>
+
+<h3>対処 ② — 1つだけ変える（ablation）</h3>
+<p>揃えても、生成器と実データはまだ同時に何もかも違います。原因を特定するには、
+<b>比較の両側を、1つのパラメータ以外まったく同じにする</b>しかありません。</p>
+
+<p>これが <span class="term">ablation</span>（除去実験、knockout）です。
+基準は指数ごとに当てた GJR-t（クラスタリング・重い裾・非対称性を全部持つ）。
+そこから機構を<b>1つだけ</b>抜きます。</p>
+
+<div class="box">
+  <div class="t">「1つだけ抜く」は思ったより難しい</div>
+  <p>GJR-GARCH の分散の式はこうです（記号の意味は9章）。</p>
+<pre>σ²(t) = ω + ( α + γ·1[r&lt;0] ) · r(t−1)² + β·σ²(t−1)</pre>
+  <p><span class="math">γ</span> が「下げのときだけ余分に効く」係数、つまり非対称性です。
+  <b>では γ = 0 にすればよいか。駄目です。</b></p>
+<pre>持続性 = α + γ/2 + β        （γ は約半分の確率で効くので γ/2）
+
+  そのまま        0.000 + 0.223/2 + 0.876 = 0.988
+  γ = 0 にすると  0.000 +     0     + 0.876 = 0.876   ← 下がってしまった</pre>
+  <p>持続性が 0.988 から 0.876 に落ちます。これは<b>クラスタリングの強さそのもの</b>なので、
+  非対称性と一緒にクラスタリングまで抜けてしまい、<b>何を測ったのか分からなくなります。</b></p>
+  <p><b>正しくは γ/2 を α に足し戻す</b>（α → α + γ/2、γ → 0）。こうすると</p>
+<pre>  γ/2 を α へ    0.1115 +     0     + 0.876 = 0.988   ← 持続性そのまま</pre>
+  <p>r² に掛かる係数の期待値も、持続性も、無条件分散も変わりません。
+  <b>変わるのは「符号への依存」だけ</b>です。これが正しい ablation です。</p>
+</div>
+
+<h3>結果</h3>
+<table>
+  <tr><th>統計量</th><th>非対称性を抜く</th><th>裾の重さを抜く</th><th>クラスタリングを抜く</th></tr>
+  <tr><td>leverage</td><td class="num hit">0.68</td><td class="num dim">0.06</td><td class="num hit">0.78</td></tr>
+  <tr><td>excess_kurtosis</td><td class="num">0.25</td><td class="num">0.37</td><td class="num">0.65</td></tr>
+  <tr><td>vol_of_vol</td><td class="num">0.15</td><td class="num">0.20</td><td class="num hit">0.99</td></tr>
+  <tr><td>acf_abs_1</td><td class="num">0.18</td><td class="num dim">0.06</td><td class="num hit">0.94</td></tr>
+  <tr><td>gain_loss_asymmetry</td><td class="num dim">0.06</td><td class="num dim">0.06</td><td class="num dim">0.06</td></tr>
+  <tr><td>drift</td><td class="num dim">0.06</td><td class="num dim">0.06</td><td class="num dim">0.05</td></tr>
+</table>
+
+<p><b>ここで初めて機構に帰属できます。</b><code>leverage</code> は、この controlled ablation では
+非対称性の除去に選択的に反応し（0.68、次点 0.27）、裾の除去には顕著な反応を示しません（0.06）。</p>
+
+<p class="dim">（「p = 0.53 だから影響ゼロ」とは言いません。<b>非棄却は影響が無いことの証明ではない</b>からです。
+言えるのは「この標本規模で検出できるほどの反応は無く、KS も 0.06 と小さい」まで。
+識別の特異性を示す材料としては、それで十分です。）</p>
+
+<p>ただし <code>leverage</code> はクラスタリングの除去にも 0.78 で反応します。
+<b>純粋な非対称性の検出器ではありません。</b></p>
+
+<h3>この設計のもう1つの利点</h3>
+<p><b>ablation には依存の問題がありません。</b>両側とも独立な生成器の実行なので、
+窓の重なりも指数間の相関も無い。<b>5章の 6 ブロック制約が掛かりません。</b>
+標準の置換検定がそのまま厳密に使えます。</p>
+
+<h3>そして限界</h3>
+<p>言えるのは「<b>GJR-t という族の中で</b>、その機構を抜いたことに気づくか」までです。
+現実の非対称性が GJR の形をしている保証はありません。
+実データとの比較を置き換えるものではなく、<b>そちらの解釈を可能にするもの</b>です。</p>
+
+<div class="key">
+  <p><b>副産物として、交絡の直接証拠が出ました。</b><code>gain_loss_asymmetry</code> と
+  <code>drift</code> は、実データ vs 生成器では 6 生成器ずつ落とすのに、
+  <b>3つの機構のどれを抜いても 0.06 しか動きません。</b></p>
+  <p>つまりこの2つが生成器行列で出していた分離は、<b>機構の欠落ではない何か</b>を拾っています。
+  「生成器行列の数字を『その機構を検出した』と読んではいけない」ことの、数字による証明です。</p>
+</div>
+</div>
+
+
+<!-- ========================================================== 9. GARCH -->
+<div class="chapter">
+<h2>9. 付録：GARCH 族の式</h2>
+
+<h3>基本の考え方</h3>
+<p>リターンを「その日の変動の大きさ × ランダムな向き」に分解します。</p>
+
+<div class="eq">
+  r(t) = σ(t) · ε(t)
+  <span class="note"><span class="math">σ(t)</span> はその日の変動の大きさ（ボラティリティ）、
+  <span class="math">ε(t)</span> は平均0・分散1のランダムな数</span>
+</div>
+
+<p>GARCH の主張は「<b>σ(t) は一定ではなく、昨日の動きに応じて変わる</b>」です。</p>
+
+<h3>GARCH(1,1)</h3>
+<div class="eq">
+  σ²(t) = ω + α·r(t−1)² + β·σ²(t−1)
+</div>
+
+<table>
+  <tr><th>記号</th><th style="text-align:left">意味</th><th>S&amp;P500 での推定値</th></tr>
+  <tr><td class="math">ω</td><td style="text-align:left">底上げ（下限になる分散）</td><td class="num">0.017</td></tr>
+  <tr><td class="math">α</td><td style="text-align:left">昨日大きく動いたら、今日の分散をどれだけ上げるか</td><td class="num">0.116</td></tr>
+  <tr><td class="math">β</td><td style="text-align:left">昨日の分散をどれだけ引きずるか</td><td class="num">0.863</td></tr>
+</table>
+
+<p><span class="math">α + β</span> を <span class="term">持続性</span> と呼びます。1 に近いほど、
+一度上がった変動が長く続く。ここでは <b>0.979</b>、つまり非常に長く尾を引きます。
+<b>これがボラティリティ・クラスタリング</b>——荒れた日は荒れた日が続き、
+穏やかな日は穏やかな日が続く、という現象です。</p>
+
+<div class="key">
+  <p><b>右辺に入るのは <span class="math">r(t−1)²</span> です。2乗しているので符号が消えます。</b>
+  下げても上げても、同じだけ分散が上がる。<b>だから GARCH(1,1) は非対称性を一切持ちません。</b></p>
+  <p>3章の「実データは 124 窓すべてで leverage が負、GARCH は 0 のまわりに対称」は、
+  この一行から必然的に出てきます。<b>実証的な発見ではなく、構造的な帰結です。</b></p>
+</div>
+
+<h3>梯子の全体</h3>
+<table>
+  <tr><th>生成器</th><th style="text-align:left">持っているもの</th><th style="text-align:left">持っていないもの</th></tr>
+  <tr><td>gaussian</td><td style="text-align:left">なし（正規乱数を独立に引くだけ）</td><td style="text-align:left">すべて</td></tr>
+  <tr><td>student-t</td><td style="text-align:left">重い裾</td><td style="text-align:left">時間構造</td></tr>
+  <tr><td>iid boot</td><td style="text-align:left">実データの値そのもの</td><td style="text-align:left">時間の並び</td></tr>
+  <tr><td>block boot</td><td style="text-align:left">20日以内の時間構造（実データのまま）</td><td style="text-align:left">それより長い記憶</td></tr>
+  <tr><td>GARCH-n</td><td style="text-align:left">クラスタリング</td><td style="text-align:left">重い裾・非対称性</td></tr>
+  <tr><td>GARCH-t</td><td style="text-align:left">クラスタリング＋重い裾</td><td style="text-align:left">非対称性</td></tr>
+  <tr><td>GJR-t</td><td style="text-align:left">＋非対称性（下げのとき係数が増える）</td><td style="text-align:left">—</td></tr>
+  <tr><td>EGARCH-t</td><td style="text-align:left">＋非対称性（対数分散型・別の作り方）</td><td style="text-align:left">—</td></tr>
+</table>
+
+<p><b>これらは壊れたモデルではありません。</b>GARCH は良いモデルです。
+ここで使えるのは、<b>何が入っていないかが分かっている</b>からであって、出来が悪いからではありません。</p>
+
+<h3>GJR-GARCH と EGARCH</h3>
+<div class="eq">
+  GJR:　σ²(t) = ω + ( α + γ·1[r(t−1)&lt;0] ) · r(t−1)² + β·σ²(t−1)
+  <span class="note"><span class="math">1[·]</span> は「条件が成り立てば 1、成り立たなければ 0」という記号。
+  つまり<b>下げた日だけ γ が上乗せされる</b></span>
+</div>
+
+<div class="eq">
+  EGARCH:　log σ²(t) = ω + β·log σ²(t−1) + α(|z| − E|z|) + γ·z
+  <span class="note"><span class="math">z = r/σ</span> は標準化したリターン。
+  <span class="math">γ·z</span> の項が符号に直接反応するので、こちらでも非対称性が作れる</span>
+</div>
+
+<p>推定値は GJR で <span class="math">γ</span> = 0.223（<span class="math">α</span> = 0.000）、
+EGARCH で <span class="math">γ</span> = −0.169。<b>どちらも実データどおりの強い非対称性を持ちます。</b></p>
+
+<p class="dim">この2つは <code>leverage</code> を選んだ<b>後</b>に梯子へ足しました。
+したがって統計量の選択に対して純粋に held-out（評価専用）です。</p>
+</div>
+
+
+<!-- ========================================================== 10. 用語 -->
+<div class="chapter">
+<h2>10. 用語のまとめ</h2>
+
+<table>
+  <tr><th style="width:32%">用語</th><th style="text-align:left">一言で</th><th style="text-align:left; width:26%">出てくる場所</th></tr>
+  <tr><td>統計量 <span class="math">T</span></td><td style="text-align:left">系列を1つの数に落とす写像。必ず情報が捨てられる</td><td style="text-align:left"><code>facts.py</code></td></tr>
+  <tr><td>不変（invariant）</td><td style="text-align:left"><span class="math">T(gx) = T(x)</span> がすべての <span class="math">x</span> で成り立つ。検出力が定義上ゼロ</td><td style="text-align:left"><code>invariance.py</code></td></tr>
+  <tr><td>共通不変集合</td><td style="text-align:left">全統計量が同時に不変な変換の集まり。ここに入る性質は永久に見えない</td><td style="text-align:left"><code>invariance.py</code></td></tr>
+  <tr><td>経験分布関数（ECDF）</td><td style="text-align:left">「この値以下が何割か」を返す関数</td><td style="text-align:left"><code>resampling.py</code></td></tr>
+  <tr><td>KS 統計量</td><td style="text-align:left">2本の ECDF の縦の最大の隔たり。0〜1</td><td style="text-align:left"><code>resampling.py</code></td></tr>
+  <tr><td>p 値</td><td style="text-align:left">ラベルを貼り替えて作った KS のうち、実際の KS 以上だった割合</td><td style="text-align:left"><code>resampling.py</code></td></tr>
+  <tr><td>交換可能性</td><td style="text-align:left">ラベルを貼り替えても分布が変わらないこと。置換検定の前提</td><td style="text-align:left">5章</td></tr>
+  <tr><td>級内相関 <span class="math">ρ</span></td><td style="text-align:left">同じブロックの中でどれだけ似ているか。0〜1</td><td style="text-align:left"><code>robustness.py</code></td></tr>
+  <tr><td>デザイン効果</td><td style="text-align:left">見かけの標本数を何分の1に割り引くべきかの係数</td><td style="text-align:left"><code>robustness.py</code></td></tr>
+  <tr><td>size（第一種過誤）</td><td style="text-align:left">差が無いのに「差がある」と答える確率。名目 5% が実際 56% だった</td><td style="text-align:left"><code>selftest.py</code></td></tr>
+  <tr><td>検出力（power）</td><td style="text-align:left">本当に差があるとき、それを捉える確率</td><td style="text-align:left"><code>selftest.py</code></td></tr>
+  <tr><td>FDR / q 値</td><td style="text-align:left">有意と判定したもののうち、間違いが平均何割か</td><td style="text-align:left"><code>resampling.py</code></td></tr>
+  <tr><td>交差–合併検定</td><td style="text-align:left">「全部有意」を要求する形。多重比較の補正が要らない</td><td style="text-align:left">6章</td></tr>
+  <tr><td>energy distance</td><td style="text-align:left">多次元のまま2集合を比べる指標。同時分布の違いを見る</td><td style="text-align:left"><code>resampling.py</code></td></tr>
+  <tr><td>交絡</td><td style="text-align:left">原因の候補が複数あり、結果だけからは特定できない状態</td><td style="text-align:left">8章</td></tr>
+  <tr><td>ablation / knockout</td><td style="text-align:left">1つのパラメータ以外を完全に揃えて比べる実験</td><td style="text-align:left"><code>knockout.py</code></td></tr>
+  <tr><td>held-out</td><td style="text-align:left">統計量を選んだ後に足したので、選択の影響を受けない評価対象</td><td style="text-align:left"><code>generators.py</code></td></tr>
+  <tr><td>持続性</td><td style="text-align:left">GARCH で <span class="math">α + β</span>。1 に近いほど変動が長く尾を引く</td><td style="text-align:left">9章</td></tr>
+</table>
+
+<h3>最後に — この3層をなぜ分けるのか</h3>
+
+<div class="key">
+  <p><b>① 見えるのか（不変性の監査）</b><br>
+  定義だけで決まる。<b>ここで「不変」なら、以下の層は全部無意味です。</b>
+  データも計算も要らないので、一番先にやるべきで、一番安い。</p>
+  <p><b>② 有限標本で区別できるのか（ablation）</b><br>
+  理論上見えても、実際の標本規模で見破れるとは限らない。ここがその間を埋めます。</p>
+  <p><b>③ その判定は信用できるのか（誤り率の較正）</b><br>
+  統計量がどれだけ良くても、<b>採点手続きが 56% 誤答するなら結論は出せません。</b></p>
+</div>
+
+<p>この順番には意味があります。<b>下の層で頑張っても、上の層が駄目なら回復できない</b>からです。
+不変な統計量をいくら精密に検定しても差は出ませんし、
+壊れた検定でいくら良い統計量を評価しても数字は読めません。</p>
+
+<p class="dim" style="margin-top:6mm">数値はすべて <code>sieve-bench</code> v0.3 の
+<code>invariance.json</code> / <code>knockout.json</code> / <code>separation.json</code> /
+<code>selftest.py</code> の出力による。
+実データは S&amp;P500・日経225・FTSE100・DAX・ハンセン・EURO STOXX 50 の
+2001-07-30〜2026-08-01 の日次対数リターン 36,079 点。</p>
+</div>
+
+</body>
+</html>
