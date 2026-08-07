@@ -1,0 +1,1102 @@
+[
+ {
+  "arxiv_id": "1410.2550v1",
+  "how": "eprint",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 3,
+  "nchar": 24450,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [
+   "vol-clustering",
+   "long-memory"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "reported": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "1608.04506",
+  "how": "eprint",
+  "mention_old": [
+   "absence-of-autocorr",
+   "fat-tails",
+   "gain-loss-asymmetry",
+   "leverage"
+  ],
+  "n_captions": 12,
+  "nchar": 47431,
+  "mention": [
+   "fat-tails",
+   "leverage",
+   "gain-loss-asymmetry",
+   "absence-of-autocorr"
+  ],
+  "with_number": [
+   "fat-tails",
+   "leverage",
+   "gain-loss-asymmetry",
+   "absence-of-autocorr"
+  ],
+  "caption": [
+   "fat-tails"
+  ],
+  "reported": [
+   "absence-of-autocorr",
+   "fat-tails",
+   "gain-loss-asymmetry",
+   "leverage"
+  ]
+ },
+ {
+  "arxiv_id": "1902.02040v1",
+  "how": "eprint",
+  "mention_old": [
+   "absence-of-autocorr",
+   "aggregational-gaussianity",
+   "fat-tails",
+   "gain-loss-asymmetry",
+   "leverage",
+   "long-memory",
+   "vol-clustering",
+   "volume-volatility-corr"
+  ],
+  "n_captions": 17,
+  "nchar": 54283,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "leverage",
+   "gain-loss-asymmetry",
+   "absence-of-autocorr",
+   "aggregational-gaussianity",
+   "volume-volatility-corr"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering",
+   "leverage",
+   "gain-loss-asymmetry",
+   "absence-of-autocorr",
+   "aggregational-gaussianity"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering",
+   "leverage",
+   "aggregational-gaussianity"
+  ],
+  "reported": [
+   "absence-of-autocorr",
+   "aggregational-gaussianity",
+   "fat-tails",
+   "gain-loss-asymmetry",
+   "leverage",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2010.08962v1",
+  "how": "eprint",
+  "mention_old": [
+   "long-memory"
+  ],
+  "n_captions": 8,
+  "nchar": 54488,
+  "mention": [
+   "long-memory"
+  ],
+  "with_number": [
+   "long-memory"
+  ],
+  "caption": [],
+  "reported": [
+   "long-memory"
+  ]
+ },
+ {
+  "arxiv_id": "2112.06290",
+  "how": "eprint",
+  "mention_old": [],
+  "n_captions": 3,
+  "nchar": 28200,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2402.09563",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 44,
+  "nchar": 131653,
+  "mention": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "with_number": [
+   "fat-tails"
+  ],
+  "caption": [
+   "fat-tails"
+  ],
+  "reported": [
+   "fat-tails"
+  ]
+ },
+ {
+  "arxiv_id": "2410.06839v1",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 82,
+  "nchar": 149105,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2410.18897",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 16,
+  "nchar": 35750,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2410.18897v1",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 16,
+  "nchar": 35750,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2411.16585",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 54,
+  "nchar": 42039,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "reported": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2411.16585v1",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 54,
+  "nchar": 42039,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "reported": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2501.08822v1",
+  "how": "html",
+  "mention_old": [
+   "fat-tails"
+  ],
+  "n_captions": 80,
+  "nchar": 116943,
+  "mention": [
+   "fat-tails"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2502.07071",
+  "how": "html",
+  "mention_old": [
+   "absence-of-autocorr",
+   "vol-clustering",
+   "volume-volatility-corr"
+  ],
+  "n_captions": 16,
+  "nchar": 47101,
+  "mention": [
+   "vol-clustering",
+   "absence-of-autocorr",
+   "volume-volatility-corr"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2502.07071v3",
+  "how": "html",
+  "mention_old": [
+   "absence-of-autocorr",
+   "vol-clustering",
+   "volume-volatility-corr"
+  ],
+  "n_captions": 16,
+  "nchar": 47101,
+  "mention": [
+   "vol-clustering",
+   "absence-of-autocorr",
+   "volume-volatility-corr"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2502.09172v2",
+  "how": "html",
+  "mention_old": [
+   "fat-tails"
+  ],
+  "n_captions": 78,
+  "nchar": 53070,
+  "mention": [
+   "fat-tails"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2502.15757v3",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 28,
+  "nchar": 52671,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2503.00320v2",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 14,
+  "nchar": 53066,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2503.05254v2",
+  "how": "html",
+  "mention_old": [
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 64,
+  "nchar": 174585,
+  "mention": [
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2504.03445v3",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "leverage"
+  ],
+  "n_captions": 0,
+  "nchar": 141290,
+  "mention": [
+   "fat-tails",
+   "leverage"
+  ],
+  "with_number": [
+   "leverage"
+  ],
+  "caption": [],
+  "reported": [
+   "leverage"
+  ]
+ },
+ {
+  "arxiv_id": "2505.07820v3",
+  "how": "html",
+  "mention_old": [
+   "vol-clustering"
+  ],
+  "n_captions": 64,
+  "nchar": 76931,
+  "mention": [
+   "vol-clustering"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2506.07711v6",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory"
+  ],
+  "n_captions": 18,
+  "nchar": 101914,
+  "mention": [
+   "fat-tails",
+   "long-memory"
+  ],
+  "with_number": [
+   "fat-tails"
+  ],
+  "caption": [
+   "fat-tails"
+  ],
+  "reported": [
+   "fat-tails"
+  ]
+ },
+ {
+  "arxiv_id": "2507.06345v2",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 114,
+  "nchar": 68084,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2508.02247",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 20,
+  "nchar": 64168,
+  "mention": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "with_number": [
+   "fat-tails"
+  ],
+  "caption": [
+   "fat-tails"
+  ],
+  "reported": [
+   "fat-tails"
+  ]
+ },
+ {
+  "arxiv_id": "2508.02247v2",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 20,
+  "nchar": 64168,
+  "mention": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "with_number": [
+   "fat-tails"
+  ],
+  "caption": [
+   "fat-tails"
+  ],
+  "reported": [
+   "fat-tails"
+  ]
+ },
+ {
+  "arxiv_id": "2508.08698v1",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 18,
+  "nchar": 39386,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2509.05107v1",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 18,
+  "nchar": 36379,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2509.12456",
+  "how": "html",
+  "mention_old": [
+   "vol-clustering"
+  ],
+  "n_captions": 26,
+  "nchar": 47744,
+  "mention": [
+   "vol-clustering"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2509.12456v2",
+  "how": "html",
+  "mention_old": [
+   "vol-clustering"
+  ],
+  "n_captions": 26,
+  "nchar": 47744,
+  "mention": [
+   "vol-clustering"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2510.22206v1",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 12,
+  "nchar": 41467,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2510.22685",
+  "how": "html",
+  "mention_old": [
+   "absence-of-autocorr",
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 18,
+  "nchar": 38613,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "absence-of-autocorr"
+  ],
+  "with_number": [
+   "fat-tails"
+  ],
+  "caption": [],
+  "reported": [
+   "fat-tails"
+  ]
+ },
+ {
+  "arxiv_id": "2510.22685v1",
+  "how": "html",
+  "mention_old": [
+   "absence-of-autocorr",
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 18,
+  "nchar": 38613,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "absence-of-autocorr"
+  ],
+  "with_number": [
+   "fat-tails"
+  ],
+  "caption": [],
+  "reported": [
+   "fat-tails"
+  ]
+ },
+ {
+  "arxiv_id": "2510.26438",
+  "how": "html",
+  "mention_old": [
+   "long-memory"
+  ],
+  "n_captions": 18,
+  "nchar": 69500,
+  "mention": [
+   "long-memory"
+  ],
+  "with_number": [
+   "long-memory"
+  ],
+  "caption": [],
+  "reported": [
+   "long-memory"
+  ]
+ },
+ {
+  "arxiv_id": "2510.26438v2",
+  "how": "html",
+  "mention_old": [
+   "long-memory"
+  ],
+  "n_captions": 18,
+  "nchar": 69500,
+  "mention": [
+   "long-memory"
+  ],
+  "with_number": [
+   "long-memory"
+  ],
+  "caption": [],
+  "reported": [
+   "long-memory"
+  ]
+ },
+ {
+  "arxiv_id": "2511.02016",
+  "how": "eprint",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 10,
+  "nchar": 74548,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "caption": [],
+  "reported": [
+   "fat-tails",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2511.02016v1",
+  "how": "eprint",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 10,
+  "nchar": 74548,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "caption": [],
+  "reported": [
+   "fat-tails",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2511.02136",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 22,
+  "nchar": 42477,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2511.02136v1",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 22,
+  "nchar": 42477,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2511.15262",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 114,
+  "nchar": 59009,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2511.15262v1",
+  "how": "html",
+  "mention_old": [],
+  "n_captions": 114,
+  "nchar": 59009,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2511.20606",
+  "how": "html",
+  "mention_old": [
+   "regime-switching"
+  ],
+  "n_captions": 36,
+  "nchar": 69303,
+  "mention": [
+   "regime-switching"
+  ],
+  "with_number": [
+   "regime-switching"
+  ],
+  "caption": [],
+  "reported": [
+   "regime-switching"
+  ]
+ },
+ {
+  "arxiv_id": "2511.20606v2",
+  "how": "html",
+  "mention_old": [
+   "regime-switching"
+  ],
+  "n_captions": 36,
+  "nchar": 69303,
+  "mention": [
+   "regime-switching"
+  ],
+  "with_number": [
+   "regime-switching"
+  ],
+  "caption": [],
+  "reported": [
+   "regime-switching"
+  ]
+ },
+ {
+  "arxiv_id": "2602.07023",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 28,
+  "nchar": 39673,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2602.07023v2",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 28,
+  "nchar": 39673,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2602.23784v1",
+  "how": "html",
+  "mention_old": [
+   "absence-of-autocorr",
+   "aggregational-gaussianity",
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 56,
+  "nchar": 40297,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "absence-of-autocorr",
+   "aggregational-gaussianity"
+  ],
+  "with_number": [],
+  "caption": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "aggregational-gaussianity"
+  ],
+  "reported": [
+   "aggregational-gaussianity",
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2604.18046",
+  "how": "html",
+  "mention_old": [
+   "vol-clustering"
+  ],
+  "n_captions": 26,
+  "nchar": 71386,
+  "mention": [
+   "vol-clustering"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2606.03184v1",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "regime-switching",
+   "vol-clustering"
+  ],
+  "n_captions": 12,
+  "nchar": 54288,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "regime-switching"
+  ],
+  "with_number": [
+   "fat-tails",
+   "long-memory"
+  ],
+  "caption": [],
+  "reported": [
+   "fat-tails",
+   "long-memory"
+  ]
+ },
+ {
+  "arxiv_id": "2606.21784",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 26,
+  "nchar": 69081,
+  "mention": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "reported": [
+   "fat-tails",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2606.21784v1",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 26,
+  "nchar": 69321,
+  "mention": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "reported": [
+   "fat-tails",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2606.23070v1",
+  "how": "eprint",
+  "mention_old": [
+   "leverage",
+   "vol-clustering"
+  ],
+  "n_captions": 24,
+  "nchar": 150635,
+  "mention": [
+   "vol-clustering",
+   "leverage"
+  ],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "2606.23492v1",
+  "how": "html",
+  "mention_old": [
+   "fat-tails",
+   "leverage",
+   "long-memory",
+   "regime-switching",
+   "vol-clustering"
+  ],
+  "n_captions": 126,
+  "nchar": 275318,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "leverage",
+   "regime-switching"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "leverage",
+   "regime-switching"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering",
+   "leverage"
+  ],
+  "reported": [
+   "fat-tails",
+   "leverage",
+   "long-memory",
+   "regime-switching",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "2606.29556",
+  "how": "html",
+  "mention_old": [
+   "absence-of-autocorr",
+   "fat-tails",
+   "leverage",
+   "long-memory",
+   "regime-switching",
+   "vol-clustering"
+  ],
+  "n_captions": 30,
+  "nchar": 160997,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "leverage",
+   "absence-of-autocorr",
+   "regime-switching"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory",
+   "leverage"
+  ],
+  "caption": [
+   "vol-clustering"
+  ],
+  "reported": [
+   "fat-tails",
+   "leverage",
+   "long-memory",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "cond-mat/0210549v2",
+  "how": "eprint",
+  "mention_old": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "n_captions": 4,
+  "nchar": 22109,
+  "mention": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "caption": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "reported": [
+   "fat-tails",
+   "vol-clustering"
+  ]
+ },
+ {
+  "arxiv_id": "cond-mat/0412524v1",
+  "how": "eprint",
+  "mention_old": [],
+  "n_captions": 0,
+  "nchar": 24666,
+  "mention": [],
+  "with_number": [],
+  "caption": [],
+  "reported": []
+ },
+ {
+  "arxiv_id": "cond-mat/0503607v2",
+  "how": "eprint",
+  "mention_old": [
+   "fat-tails",
+   "long-memory",
+   "vol-clustering"
+  ],
+  "n_captions": 15,
+  "nchar": 68454,
+  "mention": [
+   "fat-tails",
+   "vol-clustering",
+   "long-memory"
+  ],
+  "with_number": [
+   "fat-tails",
+   "vol-clustering"
+  ],
+  "caption": [],
+  "reported": [
+   "fat-tails",
+   "vol-clustering"
+  ]
+ }
+]

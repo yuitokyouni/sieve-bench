@@ -25,7 +25,7 @@ os.chdir(D)
 OUT = os.path.join(D, "fulltext")
 os.makedirs(OUT, exist_ok=True)
 
-LIT = "/workspace/financial-abm-lab/data/literature_methods.json"
+LIT = os.environ.get("ABM_LIT", "/workspace/financial-abm-lab/data/literature_methods.json")
 
 CATS = {
     "fat-tails": r"(excess kurtosis|kurtosis|leptokurt|fat[\s\-]?tail|heavy[\s\-]?tail|"

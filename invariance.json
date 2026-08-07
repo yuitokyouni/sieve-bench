@@ -390,6 +390,7 @@
  "literature_blindness": {
   "new_ge1": {
    "n_papers": 40,
+   "n_total": 54,
    "blind_counts": {
     "location": 0,
     "scale": 40,
@@ -402,12 +403,52 @@
   },
   "new_ge3": {
    "n_papers": 26,
+   "n_total": 54,
    "blind_counts": {
     "location": 0,
     "scale": 26,
     "sign": 2,
     "reversal": 21,
     "shuffle": 3,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  },
+  "with_number": {
+   "n_papers": 24,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 24,
+    "sign": 4,
+    "reversal": 19,
+    "shuffle": 6,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  },
+  "caption": {
+   "n_papers": 15,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 15,
+    "sign": 1,
+    "reversal": 13,
+    "shuffle": 5,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  },
+  "reported": {
+   "n_papers": 25,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 25,
+    "sign": 3,
+    "reversal": 20,
+    "shuffle": 6,
     "tail": 0
    },
    "median_n_stats": 5.0

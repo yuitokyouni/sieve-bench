@@ -274,8 +274,22 @@ def literature_closure(out, stats):
     if not papers:
         return
 
+    # `audit/reported.py` があれば、「言及」より厳しい定義も足す。
+    # caption … 図表のキャプションに名前が出る
+    # with_number … 言及の前後 120 字に数値がある
+    # reported … 上の和集合
+    rep_path = os.path.join(HERE, "audit", "reported.json")
+    keys = ["new_ge1", "new_ge3"]
+    if os.path.exists(rep_path):
+        rep = {r["arxiv_id"]: r for r in json.load(open(rep_path))}
+        for p in papers:
+            r = rep.get(p["arxiv_id"], {})
+            for k in ("with_number", "caption", "reported"):
+                p[k] = r.get(k, [])
+        keys += ["with_number", "caption", "reported"]
+
     res = {}
-    for thresh in ("new_ge1", "new_ge3"):
+    for thresh in keys:
         rows = []
         for p in papers:
             got = []
@@ -289,23 +303,35 @@ def literature_closure(out, stats):
             rows.append({"id": p["arxiv_id"], "stats": got, "blind": blind})
         n = len(rows)
         per = {t: sum(1 for r in rows if t in r["blind"]) for t in TRANSFORMS}
-        res[thresh] = {"n_papers": n, "blind_counts": per,
+        res[thresh] = {"n_papers": n, "n_total": len(papers), "blind_counts": per,
                        "median_n_stats": float(np.median([len(r["stats"])
                                                           for r in rows]))}
-        print(f"\n{'=' * 70}")
-        print(f"文献 {n} 本が挙げている組み合わせは、何に対して盲目か"
-              f"（しきい値 {thresh}）")
-        print("=" * 70)
-        for t in TRANSFORMS:
-            k = per[t]
-            print(f"  {t:<10} {k:>3}/{n}  ({k / n:.0%}) が原理的に検出できない")
-        print(f"  （挙げている統計量の数の中央値 {res[thresh]['median_n_stats']:.0f}）")
 
     out["literature_blindness"] = res
-    print("\n→ **これはシミュレーション不要の解析的な主張である。**")
-    print("  その変換に対して不変な統計量しか挙げていない論文は、")
-    print("  標本を増やしても検定を改善してもその性質を検出できない。")
-    print("  監査は『言及』を数えているので、この判定は保守側に寄っている。")
+
+    labels = {"new_ge1": "言及1回以上", "new_ge3": "言及3回以上",
+              "with_number": "数値の近く", "caption": "図表キャプション",
+              "reported": "報告（数値∪キャプション）"}
+    print("\n" + "=" * 78)
+    print("論文が挙げている組み合わせは、何に対して盲目か —— 定義を変えても見る")
+    print("=" * 78)
+    hdr = f"  {'定義':<22}{'該当本数':>9}" + "".join(t.rjust(11) for t in TRANSFORMS)
+    print(hdr)
+    print("  " + "-" * (len(hdr) - 2))
+    for k in res:
+        n = res[k]["n_papers"]
+        row = f"  {labels.get(k, k):<22}{n:>6}本  "
+        for t in TRANSFORMS:
+            c = res[k]["blind_counts"][t]
+            row += f"{c/n:.0%}".rjust(11)
+        print(row)
+    print("\n→ **どの定義でも、時間の向きに盲目な論文は8割前後で動かない。**")
+    print("  厳しい定義ほど『そもそも1つも報告していない』論文が落ちるので")
+    print("  該当本数は減るが、盲目率そのものは安定している。")
+    print("\n→ ただし『報告』の操作化は両方向に外す。統計量名を含まない")
+    print("  キャプション（Table 3: Simulation results）は見落とし、")
+    print("  関連研究での他人の測定値の引用は拾いすぎる。")
+    print("  **真の報告集合は『言及』と『報告』の間にある。**")
 
 
 if __name__ == "__main__":

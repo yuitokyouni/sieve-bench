@@ -12,3 +12,6 @@ calibration/kronos_paths/
 
 # 数学的基礎の PDF（docs/build_pdf.py で再生成できる）
 docs/*.pdf
+
+# 文献の本文キャッシュ（再取得できる。arXiv 由来なので再配布しない）
+audit/fulltext/
