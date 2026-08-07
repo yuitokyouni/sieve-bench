@@ -132,7 +132,7 @@
    "location": "不変",
    "scale": "不変",
    "sign": "不変",
-   "reversal": "反応",
+   "reversal": "不変",
    "shuffle": "反応",
    "tail": "反応"
   },
@@ -309,6 +309,14 @@
   "variance_ratio_20": 0.22429789295491953,
   "drift": 0.032891412086018125
  },
+ "artifacts": [
+  {
+   "stat": "vol_of_vol",
+   "transform": "reversal",
+   "raw_effect": 0.08842358558675797,
+   "trimmed_effect": 0.0
+  }
+ ],
  "common_invariance": [
   "scale"
  ],
@@ -365,6 +373,7 @@
    "acf_abs_decay",
    "ljung_box_sq",
    "aggregational_gaussianity",
+   "vol_of_vol",
    "multiscaling",
    "variance_ratio_20",
    "drift"

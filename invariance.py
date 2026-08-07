@@ -102,6 +102,33 @@ def classify(rel_exact, rel_spread):
     return "反応"
 
 
+# 実装の端の効果を切り分けるための長さ。
+# 5（aggregational_gaussianity）・20（variance_ratio, multiscaling）・
+# 21（vol_of_vol）の最小公倍数 420 の倍数にすると、ブロックに刻む実装で
+# 末尾が捨てられなくなる。
+TRIM_LEN = 840
+
+
+def artifact_check(wins, tname, stat_fn, rng, spread):
+    """**「反応」が統計量の性質か、実装の端の効果か**を切り分ける。
+
+    `vol_of_vol` は 21 日ブロックに刻むので、長さ 1000 だと末尾 13 日が捨てられる。
+    系列を逆順にすると**捨てられる 13 日が変わる**ため、値が動く。これは
+    「時間の向きを見ている」のではなく、ただの端の処理である。
+
+    窓を刻み幅の倍数に切り詰めて測り直し、効果が消えるなら artifact と判定する。
+    """
+    d = []
+    for w in wins:
+        wt = w[:TRIM_LEN]
+        a, b = stat_fn(wt), stat_fn(apply_transform(wt, tname, rng))
+        if np.isfinite(a) and np.isfinite(b):
+            d.append(abs(a - b))
+    if not d or spread <= 0:
+        return None
+    return float(np.median(d) / spread)
+
+
 def main():
     rng = np.random.default_rng(SEED)
     series = load_series()
@@ -136,7 +163,16 @@ def main():
             rel_exact = float(np.max(d / scale))
             rel_spread = (float(np.median(d) / spread[s]) if spread[s] > 0
                           else float("inf"))
-            out["verdict"][s][tname] = classify(rel_exact, rel_spread)
+            v = classify(rel_exact, rel_spread)
+            # 「反応」が実装の端の効果でないか確かめる
+            if v == "反応":
+                trimmed = artifact_check(wins, tname, BATTERY[s], rng, spread[s])
+                if trimmed is not None and trimmed < EXACT:
+                    v = "不変"
+                    out.setdefault("artifacts", []).append(
+                        {"stat": s, "transform": tname,
+                         "raw_effect": rel_spread, "trimmed_effect": trimmed})
+            out["verdict"][s][tname] = v
             out["effect"][s][tname] = rel_spread
 
     # --------------------------------------------------- バッテリー全体の不変集合
@@ -176,6 +212,12 @@ def main():
     print("=" * 70)
     print(f"  現在の16個          : {common or 'なし'}")
     print(f"  drift を抜いた15個  : {common_legacy or 'なし'}")
+
+    if out.get("artifacts"):
+        print("\n実装の端の効果として除外したもの（切り詰めると効果が消える）")
+        for a in out["artifacts"]:
+            print(f"  {a['stat']} × {a['transform']}: "
+                  f"そのまま {a['raw_effect']:.4f} → 倍数に切ると {a['trimmed_effect']:.4f}")
 
     print("\n変換ごとに、**厳密に不変な**（＝原理的に見えない）統計量")
     print("-" * 70)
