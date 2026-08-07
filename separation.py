@@ -47,6 +47,7 @@ p の刻みは 0.016。**上の判定線 0.01 には構造上到達できない�
 import json
 import os
 import sys
+from collections import Counter
 from math import comb
 
 import numpy as np
@@ -54,7 +55,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from facts import BATTERY, evaluate                                # noqa: E402
-from generators import GENERATORS, HELD_OUT, build_context         # noqa: E402
+from generators import GENERATORS, HELD_OUT, build_contexts        # noqa: E402
 from resampling import (benjamini_hochberg, block_boot_test,       # noqa: E402
                         block_perm_test, energy_block_test,
                         intraclass_rho, iid_perm_test, ks_stat,
@@ -100,13 +101,6 @@ def main():
     pool = np.concatenate([r for r, _ in series.values()])
     print(f"指数 {len(series)} 本、リターン {len(pool)} 点", flush=True)
 
-    ctx = build_context(series["gspc"][0], verbose=True)
-    ctx["pool"] = pool
-    print(f"  GARCH(1,1) 正規: {np.round(ctx['garch'], 4).tolist()}")
-    print(f"  GARCH-t 同時MLE: {np.round(ctx['garch_t'], 4).tolist()}")
-    print(f"  GJR-t          : {np.round(ctx['gjr_t'], 4).tolist()}")
-    print(f"  EGARCH-t       : {np.round(ctx['egarch_t'], 4).tolist()}")
-
     wins = real_windows(series)
     blocks = calendar_blocks(wins, BLOCK_WIDTHS["span"])
     binfo = describe_blocks(wins, blocks)
@@ -116,10 +110,28 @@ def main():
         print(f"    ブロック{b['block']}  {b['start']} 〜 {b['end']}  "
               f"{b['n']:2d}本  {len(b['indices'])}指数")
 
+    # **指数ごとに当てる。**v0.2 までは S&P500 だけに当てたパラメータを6指数
+    # すべての基準線に使っていたため、KS の中に「機構の欠落」と「市場間の
+    # 異質性（ボラ水準・裾・持続性）」が混ざり、前者に帰属できなかった。
+    ctxs = build_contexts(series, verbose=True)
+    counts = Counter(w.index for w in wins)
+    alloc = {n: max(1, round(N_RUNS * counts[n] / len(wins))) for n in sorted(counts)}
+    n_total = sum(alloc.values())
+    print(f"\n指数ごとのパラメータと割り当て（実データの窓の構成に合わせる）")
+    print(f"  {'指数':<8}{'窓':>4}{'生成':>6}{'alpha':>8}{'gamma':>8}{'beta':>8}"
+          f"{'nu':>7}")
+    for n in sorted(counts):
+        o, a, g, b, nu = ctxs[n]["gjr_t"]
+        print(f"  {n:<8}{counts[n]:>4}{alloc[n]:>6}{a:>8.4f}{g:>8.4f}{b:>8.4f}"
+              f"{nu:>7.2f}")
+
     results = {}
     for gname, gfn in GENERATORS.items():
-        results[gname] = [evaluate(gfn(WINDOW, rng, ctx)) for _ in range(N_RUNS)]
-        print(f"  {gname}: {N_RUNS} 回", flush=True)
+        runs = []
+        for n, k in alloc.items():
+            runs += [evaluate(gfn(WINDOW, rng, ctxs[n])) for _ in range(k)]
+        results[gname] = runs
+        print(f"  {gname}: {n_total} 回", flush=True)
 
     stats_names = list(BATTERY.keys())
     gen_names = list(GENERATORS.keys())
@@ -127,6 +139,8 @@ def main():
     out = {"config": {"window": WINDOW, "stride": STRIDE, "n_runs": N_RUNS,
                       "n_draw": N_DRAW, "seed": SEED, "alpha": ALPHA,
                       "n_real_windows": len(wins), "n_blocks": len(binfo),
+                      "alloc": alloc, "n_gen_runs": n_total,
+                      "fit_per_index": True,
                       "block_width_days": BLOCK_WIDTHS["span"],
                       "held_out_generators": list(HELD_OUT)},
            "blocks": binfo, "rho": {}, "ks": {},

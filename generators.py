@@ -273,31 +273,73 @@ def fit_all(r):
     return out
 
 
-def build_context(pool, cache=True, verbose=False):
-    """実データから、生成器が必要とするパラメータを推定する。
+CACHE_VERSION = 3
+
+
+def _cached_fit(name, r, cache=True, verbose=False):
+    """1系列ぶんの推定。`baselines.json` に指数ごとに載せる。"""
+    r = np.asarray(r, dtype=float)
+    key = hashlib.sha256(np.round(r, 10).tobytes()).hexdigest()[:32]
+
+    blob = {}
+    if cache and os.path.exists(CACHE):
+        try:
+            blob = json.load(open(CACHE))
+        except (json.JSONDecodeError, OSError):
+            blob = {}
+    if blob.get("version") != CACHE_VERSION:
+        blob = {"version": CACHE_VERSION, "per_series": {}}
+    hit = blob.get("per_series", {}).get(name)
+    if hit and hit.get("key") == key:
+        return hit["fits"]
+
+    if verbose:
+        print(f"    {name} を推定中…", flush=True)
+    fits = fit_all(r)
+    if cache:
+        blob.setdefault("per_series", {})[name] = {
+            "key": key, "n": len(r), "fits": fits}
+        json.dump(blob, open(CACHE, "w"), indent=1)
+    return fits
+
+
+def build_context(pool, cache=True, verbose=False, name="pool"):
+    """1系列から、生成器が必要とするパラメータを推定して ctx を作る。
 
     ここで当てたものが「合わせ込んだ量」になる。判定はここで使っていない
     統計量でやらないと意味が無い ── 力場検証と同じ作法。
-
-    推定は重いので `baselines.json` に載せる。系列のハッシュを鍵にしてあるので、
-    データが変われば自動で当て直す。
     """
     pool = np.asarray(pool, dtype=float)
-    key = hashlib.sha256(np.round(pool, 10).tobytes()).hexdigest()[:32]
-
-    fits = None
-    if cache and os.path.exists(CACHE):
-        blob = json.load(open(CACHE))
-        if blob.get("key") == key and blob.get("version") == 2:
-            fits = blob["fits"]
-    if fits is None:
-        if verbose:
-            print("  基準線を推定中（初回のみ、1分ほど）…", flush=True)
-        fits = fit_all(pool)
-        if cache:
-            json.dump({"key": key, "version": 2, "n": len(pool), "fits": fits},
-                      open(CACHE, "w"), indent=1)
-
     ctx = {"pool": pool}
-    ctx.update(fits)
+    ctx.update(_cached_fit(name, pool, cache=cache, verbose=verbose))
     return ctx
+
+
+def build_contexts(series, cache=True, verbose=False):
+    """**指数ごとに別々に当てる。**v0.2 までの交絡を潰すための変更。
+
+    v0.2 は GARCH 族と student-t を **S&P500 だけ**に当て、それを6指数すべての
+    基準線として使っていた。すると KS(実データ, GARCH) の中に
+
+      - GARCH が非対称性を持たないこと（測りたいもの）
+      - S&P500 と日経・ハンセンのボラティリティ水準・裾・持続性の違い
+      - 推定パラメータのずれ
+
+    が全部混ざる。**「GARCH が leverage を持たないから 0.93 になった」とは
+    識別できない。**行列は「生成器 × 統計量」であって、まだ
+    「既知の欠落 × 検出器」になっていなかった。
+
+    ここでは各指数にその指数自身のパラメータを当て、生成もその指数の
+    パラメータで行ってからプールする。ブートストラップも指数内で引く。
+    こうすると市場間の異質性は実データ側と生成器側の**両方に等しく入る**ので、
+    差として残るのは機構の欠落だけになる。
+
+    返り値は {指数名: ctx}。
+    """
+    if verbose:
+        print("  指数ごとに基準線を推定（初回のみ数分）…", flush=True)
+    out = {}
+    for name in sorted(series):
+        r = series[name][0] if isinstance(series[name], tuple) else series[name]
+        out[name] = build_context(r, cache=cache, verbose=verbose, name=name)
+    return out
