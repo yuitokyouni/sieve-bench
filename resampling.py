@@ -171,9 +171,15 @@ def block_boot_test(a_vals, a_blocks, b_vals, stat, rng, n_boot=2000):
     A* にだけ依存が入るという実際の設計が保たれる。
 
     **これでも名目水準には届かない。**実測（`selftest.py`）で名目 5% に対し
-    真の大きさは 10〜13% ある。原因は手法ではなく**ブロックが6個しかないこと**で、
+    真の大きさは 10〜13% ある。ただし**これを「依存を扱う手法が無い」と読んではいけない。**
+    暦ブロック単位の randomization inference、block bootstrap、wild cluster
+    bootstrap、HAC、モデルベースの推論など、依存構造を保つ方法は存在する。
+    ここで試したのはそのうち2つ（ブロック置換とブロック復元抽出）だけである。
+
+    消せないのは手法の側ではなく**情報量の側**である。25年を4年窓で見れば独立な
+    暦ブロックは6個しかなく、どの手法を使ってもその6個以上の情報は出てこない。
     クラスタ数が 20 を切ると過剰棄却するのは広く知られている。平滑化を入れても
-    改善しないことは確認済み（ tie の副作用ではない）。
+    改善しないことは確認済み（tie の副作用ではない）。
 
     **したがって p 値は較正して読む。**名目 p < 0.01 で真の大きさが 4〜5% に
     収まるので、`separation.py` はそこを 5% 水準の判定線として使う。
@@ -198,6 +204,61 @@ def block_boot_test(a_vals, a_blocks, b_vals, stat, rng, n_boot=2000):
     good = np.isfinite(null)
     pval = float((1.0 + np.sum(null[good] >= obs)) / (good.sum() + 1.0))
     return float(obs), pval, float(np.percentile(null[good], 95)), k
+
+
+def paired_block_test(a_vals, a_blocks, b_vals, b_blocks, stat, n_perm=2000,
+                      rng=None):
+    """**対応のあるブロック設計**の randomization test。実データ同士の対照に使う。
+
+    米欧の窓とアジアの窓は、同じ暦ブロックに同時に現れる。2008年の米欧と
+    2008年のアジアは同じショックを受けているので、**独立な単位ではない。**
+    v0.2 の途中まではこれを対応なしのブロック置換で検定していた。両群の同じ
+    暦ブロックを別々の交換単位として扱っていたことになる（帰無分布が広くなる
+    方向なので保守側だが、設計としては誤り）。
+
+    正しくは、暦ブロックを揃えたうえで**ブロックごとに群ラベルを入れ替える**。
+    帰無仮説は「同じ暦ブロックの中では、A 側と B 側の値は交換可能」であり、
+    共通の暦効果を条件付けたうえで群の差だけを見ることになる。
+
+    **代償が離散性である。**ブロックが K 個なら割り当ては 2^K 通りしかない。
+    K=6 なら 64 通りで、p 値の刻みは 1/64 ≈ 0.016 になる。**5% 水準の精密な
+    推論をする設計として、そもそも解像度が足りない。**これは手法の欠陥ではなく、
+    独立な暦が6つしか無いという事実がそのまま表に出たものである。
+
+    返り値 (統計量, p値, ブロック数, 割り当ての総数)。
+    """
+    a = np.asarray(a_vals, float)
+    b = np.asarray(b_vals, float)
+    ma, mb = np.isfinite(a), np.isfinite(b)
+    a, ab = a[ma], np.asarray(a_blocks)[ma]
+    b, bb = b[mb], np.asarray(b_blocks)[mb]
+    if len(a) < 5 or len(b) < 5:
+        return np.nan, np.nan, 0, 0
+
+    keys = sorted(set(ab.tolist()) & set(bb.tolist()))
+    if not keys:
+        return np.nan, np.nan, 0, 0
+    pairs = [(a[ab == k], b[bb == k]) for k in keys]
+    k = len(pairs)
+    obs = stat(np.concatenate([p[0] for p in pairs]),
+               np.concatenate([p[1] for p in pairs]))
+
+    total = 2 ** k
+    if total <= n_perm:                      # 全列挙できるなら列挙する
+        signs = [[(i >> j) & 1 for j in range(k)] for i in range(total)]
+    else:
+        rng = rng or np.random.default_rng(0)
+        signs = rng.integers(0, 2, size=(n_perm, k)).tolist()
+
+    null = np.empty(len(signs))
+    for i, s in enumerate(signs):
+        left = [pairs[j][s[j]] for j in range(k)]
+        right = [pairs[j][1 - s[j]] for j in range(k)]
+        null[i] = stat(np.concatenate(left), np.concatenate(right))
+    good = np.isfinite(null)
+    pval = float(np.sum(null[good] >= obs) / good.sum()) if total <= n_perm \
+        else float((1.0 + np.sum(null[good] >= obs)) / (good.sum() + 1.0))
+    return float(obs), pval, k, total
 
 
 def iid_perm_test(a_vals, b_vals, stat, rng, n_perm=2000):

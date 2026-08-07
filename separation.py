@@ -19,10 +19,18 @@
 56% 棄却していた**（名目 5%）。ここでは交換の単位を暦のブロックに上げる
 （`resampling.block_boot_test`）。
 
-**2. それでも名目水準には届かない。**独立な暦ブロックが6個しかないためで、
-クラスタ数 20 未満の過剰棄却は広く知られている。**そこで閾値を較正した。**
-名目 p < 0.01 で真の大きさが 3〜5% に収まる（`selftest.py` の較正表）。
-以下ではこの **p < 0.01 を 5% 水準の判定線**として使う。
+**2. それでも名目水準には届かない。**ただし**依存を扱う手法が無いわけではない。**
+暦ブロック単位の randomization inference、block bootstrap、wild cluster bootstrap、
+HAC など、依存を保つ方法は存在する。ここで測ったのは2つだけである。
+消せないのは手法ではなく**独立な情報単位の不足**で、25年を4年窓で見れば
+独立な暦は6個しか無い。**そこで閾値を較正した。**名目 p < 0.01 で真の大きさが
+3〜5% に収まる（`selftest.py`）。以下ではこれを 5% 水準の判定線として使う。
+
+**2b. 正しく補正すると、独立情報が無いことがそのまま出る。**実データ同士の対照は
+同じ暦ブロックを両側が共有する**対応のある設計**なので、ブロックごとのラベル
+入れ替えで検定する（`paired_block_test`）。割り当ては 2^6 = 64 通りしかなく、
+p の刻みは 0.016。**上の判定線 0.01 には構造上到達できない。**
+これは検定の欠陥ではなく、6つ分の独立な暦しか無いことの直接の帰結である。
 
 **3. 天井という呼び方をやめた。**米欧 vs アジアの差は「越えるべき天井」ではなく、
 **現実どうしのばらつきの一例**にすぎない。制度・通貨・産業構成・期間が違うので、
@@ -39,6 +47,7 @@
 import json
 import os
 import sys
+from math import comb
 
 import numpy as np
 
@@ -48,7 +57,8 @@ from facts import BATTERY, evaluate                                # noqa: E402
 from generators import GENERATORS, HELD_OUT, build_context         # noqa: E402
 from resampling import (benjamini_hochberg, block_boot_test,       # noqa: E402
                         block_perm_test, energy_block_test,
-                        intraclass_rho, iid_perm_test, ks_stat)
+                        intraclass_rho, iid_perm_test, ks_stat,
+                        paired_block_test)
 from windows import (BLOCK_WIDTHS, WINDOW, STRIDE, calendar_blocks,  # noqa: E402
                      describe_blocks, load_series, real_windows)
 
@@ -156,15 +166,31 @@ def main():
     # ----------------------------------------------------- 現実どうしのばらつき
     print("\n参照対照（現実どうしのばらつき）…", flush=True)
     for cname, (ia, ib, desc) in contrasts(wins).items():
-        row = {"desc": desc, "n_a": len(ia), "n_b": len(ib), "ks": {}, "pvalue": {}}
+        ba, bb = set(blocks[ia].tolist()), set(blocks[ib].tolist())
+        # 両側が同じ暦ブロックを共有しているなら、それは対応のある設計である。
+        # 同時期の米欧とアジアは共通ショックを受けるので独立な単位ではない。
+        paired = ba == bb
+        row = {"desc": desc, "n_a": len(ia), "n_b": len(ib),
+               "design": "paired_block" if paired else "unpaired_block",
+               "ks": {}, "pvalue": {}}
         for s in stats_names:
             va = [real[i][s] for i in ia]
             vb = [real[i][s] for i in ib]
-            k, p, _, _ = block_perm_test(va, blocks[ia], vb, ks_stat, rng,
-                                         N_DRAW, b_blocks=blocks[ib])
+            if paired:
+                k, p, nb, tot = paired_block_test(va, blocks[ia], vb, blocks[ib],
+                                                  ks_stat, N_DRAW, rng)
+            else:
+                k, p, _, _ = block_perm_test(va, blocks[ia], vb, ks_stat, rng,
+                                             N_DRAW, b_blocks=blocks[ib])
+                nb = len(ba) + len(bb)
+                tot = comb(len(ba) + len(bb), len(ba))
             row["ks"][s], row["pvalue"][s] = k, p
+        row["n_blocks"], row["n_assignments"] = nb, int(tot)
+        row["p_resolution"] = 1.0 / tot if tot else None
         out["reference_contrasts"][cname] = row
-        print(f"  {cname:16s} {len(ia):3d} vs {len(ib):3d}  {desc}", flush=True)
+        print(f"  {cname:16s} {len(ia):3d} vs {len(ib):3d}  "
+              f"{row['design']}  割り当て {int(tot):,} 通り "
+              f"（p の刻み {1.0/tot:.3f}）", flush=True)
 
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            "separation.json"), "w") as f:
@@ -223,7 +249,12 @@ def report(out, stats_names, gen_names):
         big = sorted(((v, s) for s, v in row["ks"].items() if np.isfinite(v)),
                      reverse=True)[:3]
         print(f"  {cname:14s} ({row['n_a']:3d} vs {row['n_b']:3d}) {row['desc']}")
+        print(f"      {row['design']}／割り当て {row['n_assignments']:,} 通り"
+              f"／p の刻み {row['p_resolution']:.3f}")
         print("      最大: " + ", ".join(f"{s} {v:.2f}" for v, s in big))
+    print("\n  **対応のある対照は 2^K 通りしか割り当てが無い。**独立な暦が6つなら")
+    print("  64 通りで、p の刻みは 0.016。手法の欠陥ではなく、独立情報の量が")
+    print("  そのまま表に出ている。")
 
     print(f"\n判定線 p < {ALPHA} で**全生成器**を落とせた統計量：")
     any_hit = False
