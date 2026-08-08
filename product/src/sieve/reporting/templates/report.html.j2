@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ product }} evaluation — {{ b.model.display_name }}</title>
+<style>
+  :root { --ink:#14181f; --muted:#5a6577; --rule:#d5dce4; --panel:#f5f7fa;
+          --pass:#1b7a44; --fail:#b8471f; --warn:#a06a00; --na:#5a6577; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 15px/1.7 system-ui, sans-serif; color:var(--ink); }
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.1rem; border-bottom: 2px solid var(--ink);
+       padding-bottom:.3rem; margin: 2.2rem 0 .8rem; }
+  .muted { color: var(--muted); }
+  .claim { background: var(--panel); border-left: 4px solid var(--ink);
+           padding: .8rem 1rem; margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .92em; }
+  th, td { text-align: left; padding: .45rem .6rem;
+           border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+  .st { font-weight: 700; font-size: .85em; letter-spacing: .03em; }
+  .st.PASS { color: var(--pass); } .st.FAIL { color: var(--fail); }
+  .st.WARN { color: var(--warn); }
+  .st.NOT_TESTED, .st.INSUFFICIENT { color: var(--na); }
+  .badge { display:inline-block; font-size:.72em; border:1px solid var(--rule);
+           border-radius:3px; padding:0 .35em; color:var(--muted); }
+  .finding { border:1px solid var(--rule); border-left:4px solid var(--fail);
+             padding:.8rem 1rem; margin:.8rem 0; }
+  .finding h3 { margin:.1rem 0 .4rem; font-size:1em; }
+  ul { margin:.3rem 0 .6rem 1.2rem; padding:0; }
+  li { margin-bottom:.25rem; }
+  footer { margin-top:3rem; border-top:1px solid var(--rule);
+           padding-top:1rem; font-size:.85em; color:var(--muted); }
+  code { background: var(--panel); padding:0 .3em; border-radius:3px;
+         font-size:.9em; }
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>{{ b.model.display_name }} <span class="muted">v{{ b.model.model_version }}</span></h1>
+<div class="muted">{{ product }} evaluation · suite {{ b.suite.suite_id }}@{{ b.suite.version }}
+· bundle <code>{{ b.bundle_hash[:16] }}…</code></div>
+
+<h2>1 · Claim under evaluation</h2>
+<div class="claim">
+  <b>{{ b.claim.claim_id }}</b> — {{ b.claim.statement }}
+  <div class="muted">Use case: {{ b.claim.use_case }}</div>
+</div>
+<p class="muted">This report answers only: what evidence supports or contradicts
+using this simulation <em>for this claim</em>. It does not decide whether the
+model is “true”, and no aggregate score exists.</p>
+
+<h2>2 · Scope and reference</h2>
+<table>
+  <tr><th>Input</th><td><code>{{ b.run_manifest.input_path }}</code>
+      · sha256 <code>{{ b.dataset.content_hash[:16] }}…</code></td></tr>
+  <tr><th>Reference</th><td>{{ b.suite.reference.dataset }} — frozen derived
+      window statistics ({{ b.results[0].n_reference if b.results else "?" }} windows,
+      calendar-blocked); raw reference series are not shipped</td></tr>
+  <tr><th>Windows</th><td>length {{ b.suite.reference.window_length }},
+      non-overlapping; {{ b.results[0].n_simulation if b.results else 0 }} from input</td></tr>
+  <tr><th>Decision line</th><td>adjusted p &lt; {{ b.suite.inference.alpha }}
+      ({{ b.suite.inference.multiple_testing }}-adjusted; nominal line calibrated
+      so its true size is 3–5% under the reference dependence)</td></tr>
+</table>
+
+<h2>3 · Validation profile</h2>
+<table>
+  <tr><th>Evidence dimension</th><th>Status</th><th>Basis / note</th></tr>
+  {% for d in b.profile.dimensions %}
+  <tr>
+    <td>{{ d.dimension.replace("_", " ") }}</td>
+    <td><span class="st {{ d.status.value }}">{{ d.status.value }}</span></td>
+    <td class="muted">{{ d.note or d.test_refs|join(", ") }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<p class="muted">Statuses do not average. FAIL on one dimension says nothing
+about the others; NOT_TESTED means exactly that.</p>
+
+<h2>4 · Critical findings</h2>
+{% if b.findings %}
+  {% for f in b.findings %}
+  <div class="finding">
+    <h3>{{ f.title }} <span class="badge">{{ f.severity.value }}</span>
+        <span class="badge">{{ f.code }}</span></h3>
+    <div><b>Observation.</b> {{ f.observation }}</div>
+    <div><b>Interpretation.</b> {{ f.interpretation }}</div>
+    <div><b>Impact on claim.</b> {{ f.claim_impact }}</div>
+    <div class="muted">Evidence: {{ f.evidence_refs|join(" · ") }}</div>
+    <div><b>Questions for the author.</b>
+      <ul>{% for q in f.questions_for_author %}<li>{{ q }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <p>No dimension tested by this suite separated the input from the reference at
+  the calibrated line. See the per-metric caveats: with ~6 independent calendar
+  blocks, absence of separation is weak evidence.</p>
+{% endif %}
+
+<h2>5 · Per-metric results</h2>
+<table>
+  <tr><th>Metric</th><th class="num">KS</th><th class="num">p</th>
+      <th class="num">p (adj)</th><th>Status</th><th>Pre-spec</th>
+      <th>Baselines this metric cannot separate</th></tr>
+  {% for r in b.results %}
+  {% set mid = r.metric_ref.split("@")[0] %}
+  <tr>
+    <td><code>{{ mid }}</code></td>
+    <td class="num">{{ "%.3f"|format(r.statistic_value) if r.statistic_value is not none else "—" }}</td>
+    <td class="num">{{ "%.4f"|format(r.p_value) if r.p_value is not none else "—" }}</td>
+    <td class="num">{{ "%.4f"|format(r.adjusted_p_value) if r.adjusted_p_value is not none else "—" }}</td>
+    <td><span class="st {{ r.status.value }}">{{ r.status.value }}</span></td>
+    <td>{% if r.prespecification.value == "POST_HOC" %}<span class="badge">POST HOC</span>
+        {% else %}<span class="muted">pre-specified</span>{% endif %}</td>
+    <td class="muted">{{ baseline_context.get(mid, [])|join(", ") or "separates all shipped baselines" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>6 · What was not tested</h2>
+<ul>
+  {% for d in not_tested %}<li><b>{{ d.dimension.replace("_"," ") }}</b> — {{ d.note }}</li>{% endfor %}
+  {% for d in insufficient %}<li><b>{{ d.dimension.replace("_"," ") }}</b> — insufficient data ({{ d.test_refs|join(", ") }})</li>{% endfor %}
+  {% for l in b.limitations %}<li>{{ l }}</li>{% endfor %}
+</ul>
+
+<h2>7 · Provenance</h2>
+<table>
+  <tr><th>Run</th><td><code>{{ b.run_manifest.run_id }}</code>
+      · {{ product|lower }} {{ b.run_manifest.sieve_version }}</td></tr>
+  <tr><th>Command</th><td><code>{{ b.run_manifest.command }}</code></td></tr>
+  <tr><th>Master seed</th><td><code>{{ b.run_manifest.master_seed }}</code>
+      ({{ b.run_manifest.seed_tree|length }} named children recorded)</td></tr>
+  <tr><th>Suite hash</th><td><code>{{ b.suite.suite_hash[:16] }}…</code></td></tr>
+  <tr><th>Model source</th><td>{{ b.model.git_commit or "git commit not provided" }}
+      · {{ b.model.code_uri or "code URI not provided" }}</td></tr>
+  <tr><th>Environment</th><td class="muted">{% for k, v in b.run_manifest.environment.items() %}{{ k }} {{ v }} · {% endfor %}</td></tr>
+</table>
+
+<footer>{{ footer }}<br>
+Verify this bundle: <code>sieve verify &lt;run-dir&gt;</code></footer>
+</div></body>
+</html>
