@@ -58,7 +58,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from facts import BATTERY                      # noqa: E402
+from facts import BATTERY, SPEC                # noqa: E402
 from windows import load_series, real_windows   # noqa: E402
 
 SEED = 20260802
@@ -236,10 +236,41 @@ def main():
     rank = sorted(((out["effect"][s]["location"], s) for s in stats), reverse=True)
     print("    " + ", ".join(f"{s} {v:.2f}" for v, s in rank[:5]))
 
+    # ------------------------------------------------- 宣言と実測の突き合わせ
+    # **これが再発防止の本体である。**報告書は読み飛ばせるが、失敗は読み飛ばせない。
+    print("\n" + "=" * 70)
+    print("設計契約の検査 —— facts.SPEC の must_invariant と実測を突き合わせる")
+    print("=" * 70)
+    bad = []
+    for s_ in stats:
+        for t in SPEC.get(s_, {}).get("must_invariant", ()):
+            v = out["verdict"][s_][t]
+            if v != "不変":
+                bad.append((s_, t, v, out["effect"][s_][t]))
+    if bad:
+        for s_, t, v, e in bad:
+            print(f"  NG  {s_} は {t} に不変であるべきだが「{v}」"
+                  f"（効果 {e:.3f}）")
+        print(f"\n  **{len(bad)} 件が契約違反。**バグとして扱うこと。")
+    else:
+        print("  全ての must_invariant が実測と一致。")
+    out["contract_violations"] = [
+        {"stat": a, "transform": b, "verdict": c, "effect": d} for a, b, c, d in bad]
+
+    # 契約に無いが位置に敏感なもの（標準的な定義がそうなっているだけ、を可視化）
+    print("\n参考：位置不変を契約していないが、location に反応する統計量")
+    for s_ in stats:
+        if "location" in SPEC.get(s_, {}).get("must_invariant", ()):
+            continue
+        e = out["effect"][s_]["location"]
+        if e and e > 0.05:
+            print(f"  {s_:<26}{e:>7.3f}  （ドリフトが混入している。標準的な定義由来）")
+
     literature_closure(out, stats)
 
     json.dump(out, open(os.path.join(HERE, "invariance.json"), "w"),
               ensure_ascii=False, indent=1)
+    return 1 if out.get("contract_violations") else 0
 
 
 # 文献監査のカテゴリ → 本ベンチの統計量。volume-volatility-corr と
@@ -335,4 +366,4 @@ def literature_closure(out, stats):
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

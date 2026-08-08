@@ -65,7 +65,7 @@
    "tail": "反応"
   },
   "gain_loss_asymmetry": {
-   "location": "反応",
+   "location": "不変",
    "scale": "不変",
    "sign": "反応",
    "reversal": "反応",
@@ -195,12 +195,12 @@
    "tail": 0.7923543072944932
   },
   "gain_loss_asymmetry": {
-   "location": 0.6344866970094427,
+   "location": 0.0,
    "scale": 0.0,
-   "sign": 1.3310704683905108,
-   "reversal": 0.7619335287083479,
-   "shuffle": 0.6480289104806203,
-   "tail": 0.32741981940539727
+   "sign": 2.3357522980164487,
+   "reversal": 2.0474117077890663,
+   "shuffle": 1.2235123367198837,
+   "tail": 0.15868408321238517
   },
   "acf_return_1": {
    "location": 1.0220551410590635e-16,
@@ -296,7 +296,7 @@
   "hill_right": 1.1812404625607296,
   "hill_left": 1.1575072385954814,
   "return_skewness": 0.4276826421671795,
-  "gain_loss_asymmetry": 0.7366806499522961,
+  "gain_loss_asymmetry": 0.04593333333333333,
   "acf_return_1": 0.0594051330697035,
   "acf_abs_1": 0.13202710547823737,
   "acf_abs_20": 0.11352423843713531,
@@ -327,6 +327,7 @@
   "location": [
    "excess_kurtosis",
    "return_skewness",
+   "gain_loss_asymmetry",
    "acf_return_1",
    "aggregational_gaussianity",
    "vol_of_vol",
@@ -387,6 +388,7 @@
   ],
   "tail": []
  },
+ "contract_violations": [],
  "literature_blindness": {
   "new_ge1": {
    "n_papers": 40,

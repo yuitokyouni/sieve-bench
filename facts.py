@@ -154,25 +154,44 @@ def return_skewness(r):
     return float((z ** 3).mean())
 
 
-def gain_loss_asymmetry(r, rho=4.0, horizon=250):
+def gain_loss_asymmetry(r, rho=4.0, horizon=250, tmax=30):
     """本来の意味での利得／損失の非対称。**到達時間**で測る。
 
     出典: Jensen, M. H., Johansen, A. & Simonsen, I. (2003).
     "Inverse statistics in economics: the gain-loss asymmetry."
     Physica A 324, 338-343.
 
-    ある日から見て、累積リターンが **+rho·sigma に達するまでの日数**と
-    **-rho·sigma に達するまでの日数**を比べる。株価指数では損失側のほうが
-    早く到達する（下げは速く、上げは遅い）ことが知られている。
+    ある日から見て、累積リターンが +rho·sigma / -rho·sigma に達するまでの
+    日数を比べる。株価指数では**短期では損失側のほうが早く到達する**。
 
-    返すのは log(利得側の中央値 / 損失側の中央値)。正なら「上げに時間がかかる」。
-    両方向とも horizon 以内に到達した起点だけを使う（片側だけの打ち切りが
-    入ると比較が偏るため）。rho は窓自身の標準偏差で測るのでスケール不変。
+    返すのは、短期（t <= tmax）での
 
-    **3次モーメントとは別物である。**対称な分布でも到達時間は非対称になりうるし、
-    その逆もある。
+        F_down(t) - F_up(t)      F は「t 日以内に到達した起点の割合」
+
+    の平均。正なら「下げの方が早い」。
+
+    ## v0.3 で2つのバグを直した。**両方とも値の符号を変えるほどのものだった。**
+
+    **1. 選抜バイアス。**旧版は「両方向とも horizon 以内に到達した起点」だけを
+    使っていた。しかし「片側だけ届かない」起点こそが、測りたい非対称そのものである。
+    それを「観測できなかった」という理由で捨てていた。実測では horizon を
+    250 → 2000 と延ばす（打ち切り 55% → 14%）だけで実データの値が
+    **+0.398 → +0.043 に落ちた。**現象ではなく捨て方が値を作っていた。
+    ここでは**全起点を使う部分分布**で比べるので、この選抜が無い。
+
+    **2. ドリフト汚染。**長い地平ではドリフトが非対称性を上書きし、実データで
+    符号が反転していた（t=200 日で -0.158）。**`invariance.py` はこれを検出して
+    いた**（location 変換への反応が四分位幅の 0.63 倍、全16統計量中3位）のに、
+    出力を読んでいなかった。ここでは**平均を引いてから測る**ので位置不変になり、
+    `drift` との役割分担もはっきりする。
+
+    直した後はパラメータに鈍い（horizon 150〜1000 で 0.0424〜0.0440）。
+    **鈍いことは要件であって、たまたまではない**（`SPEC` で宣言し検査する）。
+
+    **3次モーメントとは別物である。**対称な分布でも到達時間は非対称になりうる。
     """
     r = np.asarray(r, float)
+    r = r - r.mean()                       # 位置不変にする（ドリフトは drift が見る）
     s = float(np.std(r))
     n = len(r)
     K = min(horizon, n - 1)
@@ -188,12 +207,11 @@ def gain_loss_asymmetry(r, rho=4.0, horizon=250):
         d = c[starts + k] - base
         up[(up == 0) & (d >= lvl)] = k
         dn[(dn == 0) & (d <= -lvl)] = k
-        if up.all() and dn.all():
-            break
-    both = (up > 0) & (dn > 0)
-    if both.sum() < 50:
-        return np.nan
-    return float(np.log(np.median(up[both]) / np.median(dn[both])))
+    m = len(starts)
+    T = min(tmax, K)
+    return float(np.mean([(np.sum((dn > 0) & (dn <= t))
+                           - np.sum((up > 0) & (up <= t))) / m
+                          for t in range(1, T + 1)]))
 
 
 def variance_ratio_20(r, q=20):
@@ -267,6 +285,57 @@ BATTERY = {
     "multiscaling": multiscaling,
     "variance_ratio_20": variance_ratio_20,
     "drift": drift,
+}
+
+
+# --------------------------------------------------------------- 設計契約
+#
+# **再発防止のための宣言。**v0.3 で `gain_loss_asymmetry` に2つのバグが出た。
+# どちらも「既に測っていたのに読まなかった」種類である：
+#
+#   ・ドリフト汚染 → `invariance.py` が location 反応 0.63 と出していた
+#   ・打ち切り依存 → 誰も horizon を振っていなかった
+#
+# そこで **意図を機械可読で宣言し、実測と食い違ったら落ちるようにする。**
+# 報告書は読み飛ばせるが、失敗するテストは読み飛ばせない。
+#
+#   must_invariant … 設計上「不変であるべき」変換。破れていたらバグ
+#                    （`invariance.py` が検査）
+#   params         … 実装の自由度。**値がこれに鈍いことが要件。**
+#                    振って四分位幅比で効果を測る（`sensitivity.py` が検査）
+#
+# スケール不変は全統計量の設計方針なので、全部に入っている。
+# 位置不変は「水準ではなく形・依存を測る」統計量にだけ課す。
+# `drift` は位置を測るのが仕事なので、位置不変を課さない。
+
+SPEC = {
+    "excess_kurtosis":           dict(must_invariant=("location", "scale"), params={}),
+    "hill_right":                dict(must_invariant=("scale",),
+                                      params={"frac": (0.025, 0.05, 0.10)}),
+    "hill_left":                 dict(must_invariant=("scale",),
+                                      params={"frac": (0.025, 0.05, 0.10)}),
+    "return_skewness":           dict(must_invariant=("location", "scale"), params={}),
+    "gain_loss_asymmetry":       dict(must_invariant=("location", "scale"),
+                                      params={"rho": (3.0, 4.0, 6.0),
+                                              "horizon": (150, 250, 500),
+                                              "tmax": (20, 30, 50)}),
+    "acf_return_1":              dict(must_invariant=("location", "scale"), params={}),
+    "acf_abs_1":                 dict(must_invariant=("scale",), params={}),
+    "acf_abs_20":                dict(must_invariant=("scale",), params={}),
+    "acf_abs_decay":             dict(must_invariant=("scale",),
+                                      params={"lags": (30, 50, 80)}),
+    "ljung_box_sq":              dict(must_invariant=("scale",),
+                                      params={"lags": (10, 20, 40)}),
+    "aggregational_gaussianity": dict(must_invariant=("location", "scale"),
+                                      params={"scale": (3, 5, 10)}),
+    "leverage":                  dict(must_invariant=("scale",),
+                                      params={"lags": (3, 5, 10)}),
+    "vol_of_vol":                dict(must_invariant=("location", "scale"),
+                                      params={"win": (10, 21, 42)}),
+    "multiscaling":              dict(must_invariant=("scale",), params={}),
+    "variance_ratio_20":         dict(must_invariant=("location", "scale"),
+                                      params={"q": (10, 20, 40)}),
+    "drift":                     dict(must_invariant=("scale",), params={}),
 }
 
 
