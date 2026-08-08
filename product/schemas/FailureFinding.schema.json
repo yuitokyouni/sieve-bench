@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "Severity": {
+      "enum": [
+        "INFO",
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claim_impact": {
+      "title": "Claim Impact",
+      "type": "string"
+    },
+    "code": {
+      "title": "Code",
+      "type": "string"
+    },
+    "evidence_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "finding_id": {
+      "title": "Finding Id",
+      "type": "string"
+    },
+    "interpretation": {
+      "title": "Interpretation",
+      "type": "string"
+    },
+    "observation": {
+      "title": "Observation",
+      "type": "string"
+    },
+    "questions_for_author": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Questions For Author",
+      "type": "array"
+    },
+    "severity": {
+      "$ref": "#/$defs/Severity"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "finding_id",
+    "code",
+    "severity",
+    "title",
+    "observation",
+    "interpretation",
+    "claim_impact"
+  ],
+  "title": "FailureFinding",
+  "type": "object"
+}

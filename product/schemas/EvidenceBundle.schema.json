@@ -1,0 +1,910 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "kind"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AuthorResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "author_name": {
+          "title": "Author Name",
+          "type": "string"
+        },
+        "correction_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Correction Refs",
+          "type": "array"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "reproduction_confirmed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reproduction Confirmed"
+        },
+        "response": {
+          "title": "Response",
+          "type": "string"
+        }
+      },
+      "required": [
+        "author_name",
+        "received_at",
+        "response"
+      ],
+      "title": "AuthorResponse",
+      "type": "object"
+    },
+    "ClaimSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "decision_policy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decision Policy"
+        },
+        "optional_dimensions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Optional Dimensions",
+          "type": "array"
+        },
+        "required_dimensions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Dimensions",
+          "type": "array"
+        },
+        "scope": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Scope",
+          "type": "object"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        },
+        "use_case": {
+          "title": "Use Case",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "version",
+        "statement",
+        "use_case"
+      ],
+      "title": "ClaimSpec",
+      "type": "object"
+    },
+    "DatasetManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "default": "",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End"
+        },
+        "frequency": {
+          "default": "daily",
+          "title": "Frequency",
+          "type": "string"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "schema_version": {
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Uri"
+        },
+        "start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start"
+        },
+        "symbols": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Symbols",
+          "type": "array"
+        },
+        "timezone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timezone"
+        },
+        "transforms": {
+          "items": {
+            "$ref": "#/$defs/TransformSpec"
+          },
+          "title": "Transforms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dataset_id"
+      ],
+      "title": "DatasetManifest",
+      "type": "object"
+    },
+    "DimensionStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "title": "Dimension",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "test_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Test Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dimension",
+        "status"
+      ],
+      "title": "DimensionStatus",
+      "type": "object"
+    },
+    "FailureFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_impact": {
+          "title": "Claim Impact",
+          "type": "string"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "finding_id": {
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "interpretation": {
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "observation": {
+          "title": "Observation",
+          "type": "string"
+        },
+        "questions_for_author": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Questions For Author",
+          "type": "array"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_id",
+        "code",
+        "severity",
+        "title",
+        "observation",
+        "interpretation",
+        "claim_impact"
+      ],
+      "title": "FailureFinding",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ModelManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "authors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "code_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Code Uri"
+        },
+        "container_digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Container Digest"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "git_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Git Commit"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "model_family": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Family"
+        },
+        "model_id": {
+          "title": "Model Id",
+          "type": "string"
+        },
+        "model_version": {
+          "title": "Model Version",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Parameters",
+          "type": "object"
+        },
+        "parameters_hash": {
+          "default": "",
+          "title": "Parameters Hash",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_id",
+        "model_version",
+        "display_name",
+        "adapter_id"
+      ],
+      "title": "ModelManifest",
+      "type": "object"
+    },
+    "Prespecification": {
+      "description": "Whether a diagnostic existed before the evidence it is judging.\n\n``POST_HOC`` is not a defect \u2014 it is disclosure. A metric added after\nobserving a failure is a discovered failure mode, not confirmatory\nevidence, and the report must say so (spec \u00a75.5).",
+      "enum": [
+        "PRE_SPECIFIED",
+        "POST_HOC",
+        "UNKNOWN"
+      ],
+      "title": "Prespecification",
+      "type": "string"
+    },
+    "RunManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "environment": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Environment",
+          "type": "object"
+        },
+        "input_hash": {
+          "title": "Input Hash",
+          "type": "string"
+        },
+        "input_path": {
+          "title": "Input Path",
+          "type": "string"
+        },
+        "master_seed": {
+          "title": "Master Seed",
+          "type": "integer"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "seed_tree": {
+          "items": {
+            "$ref": "#/$defs/SeedNode"
+          },
+          "title": "Seed Tree",
+          "type": "array"
+        },
+        "sieve_version": {
+          "title": "Sieve Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "created_at",
+        "sieve_version",
+        "command",
+        "master_seed",
+        "input_path",
+        "input_hash"
+      ],
+      "title": "RunManifest",
+      "type": "object"
+    },
+    "SeedNode": {
+      "additionalProperties": false,
+      "properties": {
+        "entropy": {
+          "title": "Entropy",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "spawn_key": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Spawn Key",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "entropy"
+      ],
+      "title": "SeedNode",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "INFO",
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "Status": {
+      "description": "Result of one test, or of one evidence dimension.\n\nThere is deliberately no ordering and no numeric mapping: statuses do not\naverage. ``NOT_TESTED`` and ``INSUFFICIENT`` are first-class outcomes, not\nerror states (spec \u00a72.2, \u00a716).",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "WARN",
+        "NOT_TESTED",
+        "INSUFFICIENT"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "TestResult": {
+      "additionalProperties": false,
+      "properties": {
+        "adjusted_p_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adjusted P Value"
+        },
+        "artifact_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "baseline_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseline Ref"
+        },
+        "caveats": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Caveats",
+          "type": "array"
+        },
+        "ci_high": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ci High"
+        },
+        "ci_low": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ci Low"
+        },
+        "effect_size": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effect Size"
+        },
+        "metric_ref": {
+          "title": "Metric Ref",
+          "type": "string"
+        },
+        "n_reference": {
+          "default": 0,
+          "title": "N Reference",
+          "type": "integer"
+        },
+        "n_simulation": {
+          "default": 0,
+          "title": "N Simulation",
+          "type": "integer"
+        },
+        "p_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "P Value"
+        },
+        "prespecification": {
+          "$ref": "#/$defs/Prespecification",
+          "default": "UNKNOWN"
+        },
+        "statistic_name": {
+          "title": "Statistic Name",
+          "type": "string"
+        },
+        "statistic_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Statistic Value"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "test_id": {
+          "title": "Test Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "test_id",
+        "metric_ref",
+        "statistic_name",
+        "status"
+      ],
+      "title": "TestResult",
+      "type": "object"
+    },
+    "TestSuiteManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "baselines": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Baselines",
+          "type": "array"
+        },
+        "claim_types": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Claim Types",
+          "type": "array"
+        },
+        "inference": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Inference",
+          "type": "object"
+        },
+        "metrics": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "reference": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Reference",
+          "type": "object"
+        },
+        "suite_hash": {
+          "default": "",
+          "title": "Suite Hash",
+          "type": "string"
+        },
+        "suite_id": {
+          "title": "Suite Id",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "suite_id",
+        "version",
+        "claim_types"
+      ],
+      "title": "TestSuiteManifest",
+      "type": "object"
+    },
+    "TransformSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "TransformSpec",
+      "type": "object"
+    },
+    "ValidationProfile": {
+      "additionalProperties": false,
+      "description": "Ten dimensions, each with a status. Never averaged (spec \u00a74.8).",
+      "properties": {
+        "dimensions": {
+          "items": {
+            "$ref": "#/$defs/DimensionStatus"
+          },
+          "title": "Dimensions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dimensions"
+      ],
+      "title": "ValidationProfile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_index": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "title": "Artifact Index",
+      "type": "array"
+    },
+    "author_responses": {
+      "items": {
+        "$ref": "#/$defs/AuthorResponse"
+      },
+      "title": "Author Responses",
+      "type": "array"
+    },
+    "bundle_hash": {
+      "default": "",
+      "title": "Bundle Hash",
+      "type": "string"
+    },
+    "bundle_id": {
+      "format": "uuid",
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "claim": {
+      "$ref": "#/$defs/ClaimSpec"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "dataset": {
+      "$ref": "#/$defs/DatasetManifest"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/FailureFinding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelManifest"
+    },
+    "profile": {
+      "$ref": "#/$defs/ValidationProfile"
+    },
+    "results": {
+      "items": {
+        "$ref": "#/$defs/TestResult"
+      },
+      "title": "Results",
+      "type": "array"
+    },
+    "run_manifest": {
+      "$ref": "#/$defs/RunManifest"
+    },
+    "schema_version": {
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "suite": {
+      "$ref": "#/$defs/TestSuiteManifest"
+    }
+  },
+  "required": [
+    "bundle_id",
+    "created_at",
+    "run_manifest",
+    "model",
+    "dataset",
+    "claim",
+    "suite",
+    "profile",
+    "results",
+    "findings"
+  ],
+  "title": "EvidenceBundle",
+  "type": "object"
+}

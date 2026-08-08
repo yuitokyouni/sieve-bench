@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "DimensionStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "title": "Dimension",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "test_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Test Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dimension",
+        "status"
+      ],
+      "title": "DimensionStatus",
+      "type": "object"
+    },
+    "Status": {
+      "description": "Result of one test, or of one evidence dimension.\n\nThere is deliberately no ordering and no numeric mapping: statuses do not\naverage. ``NOT_TESTED`` and ``INSUFFICIENT`` are first-class outcomes, not\nerror states (spec \u00a72.2, \u00a716).",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "WARN",
+        "NOT_TESTED",
+        "INSUFFICIENT"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Ten dimensions, each with a status. Never averaged (spec \u00a74.8).",
+  "properties": {
+    "dimensions": {
+      "items": {
+        "$ref": "#/$defs/DimensionStatus"
+      },
+      "title": "Dimensions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "dimensions"
+  ],
+  "title": "ValidationProfile",
+  "type": "object"
+}

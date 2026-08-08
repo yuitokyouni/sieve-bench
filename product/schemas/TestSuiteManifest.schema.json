@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "JsonValue": {}
+  },
+  "additionalProperties": false,
+  "properties": {
+    "baselines": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Baselines",
+      "type": "array"
+    },
+    "claim_types": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Claim Types",
+      "type": "array"
+    },
+    "inference": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Inference",
+      "type": "object"
+    },
+    "metrics": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Metrics",
+      "type": "array"
+    },
+    "reference": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Reference",
+      "type": "object"
+    },
+    "suite_hash": {
+      "default": "",
+      "title": "Suite Hash",
+      "type": "string"
+    },
+    "suite_id": {
+      "title": "Suite Id",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "suite_id",
+    "version",
+    "claim_types"
+  ],
+  "title": "TestSuiteManifest",
+  "type": "object"
+}

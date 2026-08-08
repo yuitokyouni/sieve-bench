@@ -1,0 +1,65 @@
+{
+  "$defs": {
+    "JsonValue": {}
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claim_id": {
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "decision_policy": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decision Policy"
+    },
+    "optional_dimensions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Optional Dimensions",
+      "type": "array"
+    },
+    "required_dimensions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Dimensions",
+      "type": "array"
+    },
+    "scope": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Scope",
+      "type": "object"
+    },
+    "statement": {
+      "title": "Statement",
+      "type": "string"
+    },
+    "use_case": {
+      "title": "Use Case",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "claim_id",
+    "version",
+    "statement",
+    "use_case"
+  ],
+  "title": "ClaimSpec",
+  "type": "object"
+}

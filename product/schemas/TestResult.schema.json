@@ -1,0 +1,164 @@
+{
+  "$defs": {
+    "Prespecification": {
+      "description": "Whether a diagnostic existed before the evidence it is judging.\n\n``POST_HOC`` is not a defect \u2014 it is disclosure. A metric added after\nobserving a failure is a discovered failure mode, not confirmatory\nevidence, and the report must say so (spec \u00a75.5).",
+      "enum": [
+        "PRE_SPECIFIED",
+        "POST_HOC",
+        "UNKNOWN"
+      ],
+      "title": "Prespecification",
+      "type": "string"
+    },
+    "Status": {
+      "description": "Result of one test, or of one evidence dimension.\n\nThere is deliberately no ordering and no numeric mapping: statuses do not\naverage. ``NOT_TESTED`` and ``INSUFFICIENT`` are first-class outcomes, not\nerror states (spec \u00a72.2, \u00a716).",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "WARN",
+        "NOT_TESTED",
+        "INSUFFICIENT"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "adjusted_p_value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Adjusted P Value"
+    },
+    "artifact_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Refs",
+      "type": "array"
+    },
+    "baseline_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Baseline Ref"
+    },
+    "caveats": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Caveats",
+      "type": "array"
+    },
+    "ci_high": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ci High"
+    },
+    "ci_low": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ci Low"
+    },
+    "effect_size": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effect Size"
+    },
+    "metric_ref": {
+      "title": "Metric Ref",
+      "type": "string"
+    },
+    "n_reference": {
+      "default": 0,
+      "title": "N Reference",
+      "type": "integer"
+    },
+    "n_simulation": {
+      "default": 0,
+      "title": "N Simulation",
+      "type": "integer"
+    },
+    "p_value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "P Value"
+    },
+    "prespecification": {
+      "$ref": "#/$defs/Prespecification",
+      "default": "UNKNOWN"
+    },
+    "statistic_name": {
+      "title": "Statistic Name",
+      "type": "string"
+    },
+    "statistic_value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Statistic Value"
+    },
+    "status": {
+      "$ref": "#/$defs/Status"
+    },
+    "test_id": {
+      "title": "Test Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "test_id",
+    "metric_ref",
+    "statistic_name",
+    "status"
+  ],
+  "title": "TestResult",
+  "type": "object"
+}

@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "Prespecification": {
+      "description": "Whether a diagnostic existed before the evidence it is judging.\n\n``POST_HOC`` is not a defect \u2014 it is disclosure. A metric added after\nobserving a failure is a discovered failure mode, not confirmatory\nevidence, and the report must say so (spec \u00a75.5).",
+      "enum": [
+        "PRE_SPECIFIED",
+        "POST_HOC",
+        "UNKNOWN"
+      ],
+      "title": "Prespecification",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "function_path": {
+      "title": "Function Path",
+      "type": "string"
+    },
+    "input_contract": {
+      "title": "Input Contract",
+      "type": "string"
+    },
+    "intended_signal": {
+      "title": "Intended Signal",
+      "type": "string"
+    },
+    "known_blind_spots": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Known Blind Spots",
+      "type": "array"
+    },
+    "metric_id": {
+      "title": "Metric Id",
+      "type": "string"
+    },
+    "prespecification": {
+      "$ref": "#/$defs/Prespecification",
+      "default": "UNKNOWN"
+    },
+    "references": {
+      "items": {
+        "type": "string"
+      },
+      "title": "References",
+      "type": "array"
+    },
+    "scale_invariant": {
+      "title": "Scale Invariant",
+      "type": "boolean"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "metric_id",
+    "version",
+    "display_name",
+    "function_path",
+    "input_contract",
+    "scale_invariant",
+    "intended_signal"
+  ],
+  "title": "MetricSpec",
+  "type": "object"
+}

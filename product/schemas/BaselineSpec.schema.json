@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "JsonValue": {}
+  },
+  "additionalProperties": false,
+  "properties": {
+    "baseline_id": {
+      "title": "Baseline Id",
+      "type": "string"
+    },
+    "calibration_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Calibration Ref"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "mechanisms_absent": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Mechanisms Absent",
+      "type": "array"
+    },
+    "mechanisms_present": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Mechanisms Present",
+      "type": "array"
+    },
+    "parameters": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Parameters",
+      "type": "object"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "baseline_id",
+    "version",
+    "description"
+  ],
+  "title": "BaselineSpec",
+  "type": "object"
+}
