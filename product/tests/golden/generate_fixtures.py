@@ -17,6 +17,7 @@ financial-daily@1.0.0 suite: they are derived window-level statistics, not the
 raw Yahoo series (which is not redistributable), which is what makes the M1
 golden path fully offline.
 """
+import hashlib
 import json
 import os
 import shutil
@@ -27,12 +28,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 sys.path.insert(0, ROOT)
 
-import numpy as np                                     # noqa: E402
-from collections import Counter                        # noqa: E402
-from windows import (BLOCK_WIDTHS, WINDOW, STRIDE,     # noqa: E402
-                     calendar_blocks, load_series, real_windows)
-from generators import GENERATORS, build_contexts      # noqa: E402
-import facts                                           # noqa: E402
+from collections import Counter  # noqa: E402
+
+import facts  # noqa: E402
+import numpy as np  # noqa: E402
+from generators import GENERATORS, build_contexts  # noqa: E402
+from windows import (  # noqa: E402
+    BLOCK_WIDTHS,
+    STRIDE,
+    WINDOW,
+    calendar_blocks,
+    load_series,
+    real_windows,
+)
 
 # The M1 suite metric set (financial-daily@1.0.0). Names match facts.BATTERY.
 M1_METRICS = ["excess_kurtosis", "hill_left", "hill_right", "acf_abs_1",
@@ -60,6 +68,29 @@ ref = {"commit": commit, "window": WINDOW, "stride": STRIDE,
                     "block": int(b)} for w, b in zip(wins, blocks)],
        "values": {m: [float(facts.BATTERY[m](w.values)) for w in wins]
                   for m in M1_METRICS}}
+
+
+def _source_hash(path):
+    """SHA-256 of the non-null (timestamp, close) pairs, canonical JSON.
+
+    Lets anyone who fetches the same index window verify they hold the same
+    source series the shipped statistics were derived from, without the raw
+    series ever being redistributed.
+    """
+    d = json.load(open(path))["chart"]["result"][0]
+    good = [[int(t), float(c)] for t, c in
+            zip(d["timestamp"], d["indicators"]["quote"][0]["close"])
+            if c is not None]
+    body = json.dumps(good, separators=(",", ":")).encode()
+    return hashlib.sha256(body).hexdigest()
+
+
+ref["sources"] = {
+    fn[:-5]: {"sha256_timestamp_close_pairs": _source_hash(
+                  os.path.join(ROOT, "data", fn)),
+              "transform": "log-diff of non-null closes, unit-sd scaled"}
+    for fn in sorted(os.listdir(os.path.join(ROOT, "data")))
+    if fn.endswith(".json")}
 json.dump(ref, open(os.path.join(FIX, "reference_stats.json"), "w"), indent=1)
 
 ctxs = build_contexts(series)

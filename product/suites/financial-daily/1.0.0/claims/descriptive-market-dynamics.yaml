@@ -1,0 +1,30 @@
+# The claim this suite can evaluate. A claim is the unit of validation:
+# statuses answer "does the evidence support using the model FOR THIS",
+# never "is the model good".
+
+claim_id: descriptive-market-dynamics
+version: "1.0"
+statement: >-
+  Simulated daily returns reproduce the descriptive dynamics of major
+  equity-index daily returns: heavy-tailed marginals, power-law tail weight,
+  volatility clustering and its persistence, sign-to-volatility asymmetry
+  (leverage), near-unit variance ratios, and empirically small drift.
+use_case: >-
+  Descriptive realism of an unconditional daily return stream — e.g. synthetic
+  training data, method demonstrations, stress-scenario texture. NOT
+  forecasting, NOT derivative pricing, NOT policy counterfactuals.
+scope:
+  frequency: daily
+  window_length: 1000
+  markets: developed equity indices
+required_dimensions:
+  - marginal_distribution
+  - tail_behavior
+  - volatility_dynamics
+  - leverage_asymmetry
+optional_dimensions:
+  - return_dependence
+  - drift_nonstationarity
+decision_policy: >-
+  Per-dimension statuses only. A FAIL on a required dimension is reported as a
+  finding with author questions; nothing aggregates across dimensions.

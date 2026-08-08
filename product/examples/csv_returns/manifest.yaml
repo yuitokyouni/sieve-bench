@@ -1,0 +1,29 @@
+# Optional model manifest for the Tier-0 CSV adapter. Everything you do not
+# state here is recorded as absent in the evidence bundle — provenance gaps
+# are reported, not silently filled.
+
+model_id: example-garch-t
+model_version: "1.0"
+display_name: Example GARCH(1,1)-t simulator
+model_family: econometric
+authors:
+  - sieve examples
+license: MIT
+notes: >-
+  6000 simulated daily log returns from the product's garch_t baseline with
+  the shipped S&P 500 joint-MLE parameters (seed 7; regenerate with
+  generate.py). Expected outcome against descriptive-market-dynamics:
+  leverage_asymmetry FAILs (the generator has no sign asymmetry) and
+  tail_behavior FAILs on the left tail (a single parameter set does not span
+  the cross-index spread of the reference), while the volatility and marginal
+  dimensions do not separate — and the report flags on those same rows that
+  they also cannot separate the frozen garch_t baseline, a worked example of
+  "PASS is weak evidence".
+parameters:
+  generator: garch_t
+  omega: 0.011039650497380534
+  alpha: 0.11756950878547939
+  beta: 0.8751463025418191
+  t_df: 6.466697865253001
+  n: 6000
+  seed: 7

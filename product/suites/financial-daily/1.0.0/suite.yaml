@@ -1,0 +1,58 @@
+# financial-daily@1.0.0 — descriptive validation of daily equity-index returns.
+# Immutable once published: suite_hash covers this file + every shipped data
+# file, and any run's evidence bundle records the hash it actually used.
+
+suite_id: financial-daily
+version: 1.0.0
+
+claim_types:
+  - descriptive
+
+reference:
+  dataset: >-
+    Six major equity indices (S&P 500, FTSE 100, DAX, Nikkei 225, Hang Seng,
+    EURO STOXX 50), daily closes 2001–2025, log returns, unit-sd scaled per
+    index.
+  window_length: 1000
+  stride: 250
+  n_windows: 124
+  calendar_block_days: 1450
+  provenance: >-
+    Shipped as frozen derived window statistics (reference_stats.json) computed
+    at the research commit recorded inside that file. Raw index series are not
+    redistributable and are not shipped; per-index SHA-256 hashes of the
+    (timestamp, close) source pairs are included so anyone fetching the same
+    window can verify they hold the same source.
+
+metrics:
+  - excess_kurtosis@1
+  - hill_left@1
+  - hill_right@1
+  - acf_abs_1@1
+  - acf_abs_20@1
+  - leverage@1
+  - variance_ratio_20@1
+  - drift@1
+
+baselines:
+  - gaussian@1
+  - student_t@1
+  - iid_bootstrap@1
+  - block_bootstrap@1
+  - garch_norm@1
+  - garch_t@1
+
+inference:
+  method: block_bootstrap_calendar
+  alpha: 0.01
+  alpha_provenance: >-
+    Nominal alpha 0.01 is the calibrated decision line: under the reference
+    dependence structure (overlapping windows, ~6 independent calendar blocks)
+    its measured true size is 3–5% (research selftest). A naive permutation
+    test rejects 56% at nominal 5% on this design and is not used.
+  n_draw: 2000
+  multiple_testing: holm
+  multiple_testing_note: >-
+    Holm controls family-wise error over the suite's confirmatory metric set.
+    The research repository used Benjamini-Hochberg for its exploratory grids;
+    both are implemented and the bundle records which was applied.
