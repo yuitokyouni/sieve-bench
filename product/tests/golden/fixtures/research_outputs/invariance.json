@@ -1,0 +1,478 @@
+{
+ "config": {
+  "seed": 20260802,
+  "n_windows": 124,
+  "exact_tol": 1e-09,
+  "small_frac": 0.05
+ },
+ "transforms": {
+  "location": {
+   "expr": "x + c",
+   "desc": "位置／ドリフト。c = 0.15·σ（ABM が出した規模）"
+  },
+  "scale": {
+   "expr": "a·x",
+   "desc": "尺度。a = 2.5"
+  },
+  "sign": {
+   "expr": "−x",
+   "desc": "符号／非対称性。上げと下げを入れ替える"
+  },
+  "reversal": {
+   "expr": "x を逆順に",
+   "desc": "時間の向き。因果の順序だけを反転する"
+  },
+  "shuffle": {
+   "expr": "x をランダム並べ替え",
+   "desc": "時間の並び。周辺分布は保つ"
+  },
+  "tail": {
+   "expr": "sign(x)|x|^1.3",
+   "desc": "裾の重さ。単調・符号保存・順序保存"
+  }
+ },
+ "verdict": {
+  "excess_kurtosis": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "不変",
+   "tail": "反応"
+  },
+  "hill_right": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "反応",
+   "reversal": "不変",
+   "shuffle": "不変",
+   "tail": "反応"
+  },
+  "hill_left": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "反応",
+   "reversal": "不変",
+   "shuffle": "不変",
+   "tail": "反応"
+  },
+  "return_skewness": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "反応",
+   "reversal": "不変",
+   "shuffle": "不変",
+   "tail": "反応"
+  },
+  "gain_loss_asymmetry": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "反応",
+   "reversal": "反応",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "acf_return_1": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "acf_abs_1": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "acf_abs_20": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "acf_abs_decay": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "ljung_box_sq": {
+   "location": "ほぼ不変",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "aggregational_gaussianity": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "leverage": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "反応",
+   "reversal": "反応",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "vol_of_vol": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "multiscaling": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "variance_ratio_20": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "不変",
+   "reversal": "不変",
+   "shuffle": "反応",
+   "tail": "反応"
+  },
+  "drift": {
+   "location": "反応",
+   "scale": "不変",
+   "sign": "反応",
+   "reversal": "不変",
+   "shuffle": "不変",
+   "tail": "反応"
+  },
+  "reversal_learnability_gap": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "ほぼ不変",
+   "reversal": "反応",
+   "shuffle": "反応",
+   "tail": "反応"
+  }
+ },
+ "effect": {
+  "excess_kurtosis": {
+   "location": 0.0,
+   "scale": 4.200147339732714e-16,
+   "sign": 0.0,
+   "reversal": 2.100073669866357e-16,
+   "shuffle": 2.100073669866357e-16,
+   "tail": 2.2255482807462714
+  },
+  "hill_right": {
+   "location": 0.22268965794947637,
+   "scale": 3.75951572880726e-16,
+   "sign": 0.4532930195486486,
+   "reversal": 0.0,
+   "shuffle": 0.0,
+   "tail": 0.6529213398016023
+  },
+  "hill_left": {
+   "location": 0.19646636980025795,
+   "scale": 3.836599850458993e-16,
+   "sign": 0.4625872203934619,
+   "reversal": 0.0,
+   "shuffle": 0.0,
+   "tail": 0.6850186281117134
+  },
+  "return_skewness": {
+   "location": 3.244879833675757e-16,
+   "scale": 3.8938558004109084e-16,
+   "sign": 1.3843924360705822,
+   "reversal": 1.2979519334703029e-16,
+   "shuffle": 1.2979519334703029e-16,
+   "tail": 0.7923543072944932
+  },
+  "gain_loss_asymmetry": {
+   "location": 0.0,
+   "scale": 0.0,
+   "sign": 2.3357522980164487,
+   "reversal": 2.0474117077890663,
+   "shuffle": 1.2235123367198837,
+   "tail": 0.15868408321238517
+  },
+  "acf_return_1": {
+   "location": 1.0220551410590635e-16,
+   "scale": 1.752094527529823e-16,
+   "sign": 0.0,
+   "reversal": 1.1680630183532155e-16,
+   "shuffle": 0.6254891884779065,
+   "tail": 0.19422180877364384
+  },
+  "acf_abs_1": {
+   "location": 0.15692810026641,
+   "scale": 2.102263434094902e-16,
+   "sign": 0.0,
+   "reversal": 2.102263434094902e-16,
+   "shuffle": 1.5015403190675833,
+   "tail": 0.12961057618957894
+  },
+  "acf_abs_20": {
+   "location": 0.07001131770085121,
+   "scale": 1.2224515221477888e-16,
+   "sign": 0.0,
+   "reversal": 1.2224515221477888e-16,
+   "shuffle": 1.097787745723936,
+   "tail": 0.08918245840687102
+  },
+  "acf_abs_decay": {
+   "location": 0.07343502088558604,
+   "scale": 1.8806827210203593e-16,
+   "sign": 0.0,
+   "reversal": 1.8806827210203593e-16,
+   "shuffle": 1.3818250650445547,
+   "tail": 0.15107070932383584
+  },
+  "ljung_box_sq": {
+   "location": 0.04840851598423132,
+   "scale": 0.0,
+   "sign": 0.0,
+   "reversal": 0.0,
+   "shuffle": 2.655979671911652,
+   "tail": 0.3020074361823327
+  },
+  "aggregational_gaussianity": {
+   "location": 5.869971141851772e-16,
+   "scale": 8.804956712777658e-16,
+   "sign": 0.0,
+   "reversal": 5.869971141851772e-16,
+   "shuffle": 0.4175327300384858,
+   "tail": 2.1251020811393104
+  },
+  "leverage": {
+   "location": 0.059464025949083586,
+   "scale": 4.671620464994944e-16,
+   "sign": 6.675454818345719,
+   "reversal": 3.6820009042820967,
+   "shuffle": 3.202049485114219,
+   "tail": 0.2191870188023323
+  },
+  "vol_of_vol": {
+   "location": 0.0,
+   "scale": 0.0,
+   "sign": 0.0,
+   "reversal": 0.08842358558675797,
+   "shuffle": 1.313442520109267,
+   "tail": 0.9769638219231358
+  },
+  "multiscaling": {
+   "location": 0.966975639674287,
+   "scale": 4.2238674788077916e-15,
+   "sign": 0.0,
+   "reversal": 2.1119337394038958e-15,
+   "shuffle": 0.6226300772735291,
+   "tail": 1.375829391931111
+  },
+  "variance_ratio_20": {
+   "location": 4.949770191770346e-16,
+   "scale": 9.899540383540692e-16,
+   "sign": 0.0,
+   "reversal": 4.949770191770346e-16,
+   "shuffle": 1.061512047494877,
+   "tail": 0.2712058733185093
+  },
+  "drift": {
+   "location": 4.560460937575976,
+   "scale": 2.1096369732501988e-16,
+   "sign": 1.2700732556146233,
+   "reversal": 1.582227729937649e-16,
+   "shuffle": 2.1096369732501988e-16,
+   "tail": 0.4253160914173417
+  },
+  "reversal_learnability_gap": {
+   "location": 0.0,
+   "scale": 0.0,
+   "sign": 0.0019625784026240166,
+   "reversal": 1.3868063937892499,
+   "shuffle": 0.6664688069291378,
+   "tail": 0.5296311103867446
+  }
+ },
+ "spread": {
+  "excess_kurtosis": 4.229272679546744,
+  "hill_right": 1.1812404625607296,
+  "hill_left": 1.1575072385954814,
+  "return_skewness": 0.4276826421671795,
+  "gain_loss_asymmetry": 0.04593333333333333,
+  "acf_return_1": 0.0594051330697035,
+  "acf_abs_1": 0.13202710547823737,
+  "acf_abs_20": 0.11352423843713531,
+  "acf_abs_decay": 0.2951648920405905,
+  "ljung_box_sq": 1.1941158433268804,
+  "aggregational_gaussianity": 3.02617644358618,
+  "leverage": 0.029706582355742542,
+  "vol_of_vol": 0.11867393798819798,
+  "multiscaling": 0.02628451366420527,
+  "variance_ratio_20": 0.22429789295491953,
+  "drift": 0.032891412086018125,
+  "reversal_learnability_gap": 0.009496136828590074
+ },
+ "artifacts": [
+  {
+   "stat": "vol_of_vol",
+   "transform": "reversal",
+   "raw_effect": 0.08842358558675797,
+   "trimmed_effect": 0.0
+  }
+ ],
+ "common_invariance": [
+  "scale"
+ ],
+ "common_invariance_without_drift": [
+  "scale"
+ ],
+ "blind_to": {
+  "location": [
+   "excess_kurtosis",
+   "return_skewness",
+   "gain_loss_asymmetry",
+   "acf_return_1",
+   "aggregational_gaussianity",
+   "vol_of_vol",
+   "variance_ratio_20",
+   "reversal_learnability_gap"
+  ],
+  "scale": [
+   "excess_kurtosis",
+   "hill_right",
+   "hill_left",
+   "return_skewness",
+   "gain_loss_asymmetry",
+   "acf_return_1",
+   "acf_abs_1",
+   "acf_abs_20",
+   "acf_abs_decay",
+   "ljung_box_sq",
+   "aggregational_gaussianity",
+   "leverage",
+   "vol_of_vol",
+   "multiscaling",
+   "variance_ratio_20",
+   "drift",
+   "reversal_learnability_gap"
+  ],
+  "sign": [
+   "excess_kurtosis",
+   "acf_return_1",
+   "acf_abs_1",
+   "acf_abs_20",
+   "acf_abs_decay",
+   "ljung_box_sq",
+   "aggregational_gaussianity",
+   "vol_of_vol",
+   "multiscaling",
+   "variance_ratio_20"
+  ],
+  "reversal": [
+   "excess_kurtosis",
+   "hill_right",
+   "hill_left",
+   "return_skewness",
+   "acf_return_1",
+   "acf_abs_1",
+   "acf_abs_20",
+   "acf_abs_decay",
+   "ljung_box_sq",
+   "aggregational_gaussianity",
+   "vol_of_vol",
+   "multiscaling",
+   "variance_ratio_20",
+   "drift"
+  ],
+  "shuffle": [
+   "excess_kurtosis",
+   "hill_right",
+   "hill_left",
+   "return_skewness",
+   "drift"
+  ],
+  "tail": []
+ },
+ "contract_violations": [],
+ "literature_blindness": {
+  "new_ge1": {
+   "n_papers": 40,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 40,
+    "sign": 10,
+    "reversal": 34,
+    "shuffle": 2,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  },
+  "new_ge3": {
+   "n_papers": 26,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 26,
+    "sign": 2,
+    "reversal": 21,
+    "shuffle": 3,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  },
+  "with_number": {
+   "n_papers": 24,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 24,
+    "sign": 4,
+    "reversal": 19,
+    "shuffle": 6,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  },
+  "caption": {
+   "n_papers": 15,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 15,
+    "sign": 1,
+    "reversal": 13,
+    "shuffle": 5,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  },
+  "reported": {
+   "n_papers": 25,
+   "n_total": 54,
+   "blind_counts": {
+    "location": 0,
+    "scale": 25,
+    "sign": 3,
+    "reversal": 20,
+    "shuffle": 6,
+    "tail": 0
+   },
+   "median_n_stats": 5.0
+  }
+ }
+}
