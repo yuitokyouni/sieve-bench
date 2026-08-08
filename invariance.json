@@ -159,6 +159,14 @@
    "reversal": "不変",
    "shuffle": "不変",
    "tail": "反応"
+  },
+  "reversal_learnability_gap": {
+   "location": "不変",
+   "scale": "不変",
+   "sign": "ほぼ不変",
+   "reversal": "反応",
+   "shuffle": "反応",
+   "tail": "反応"
   }
  },
  "effect": {
@@ -289,6 +297,14 @@
    "reversal": 1.582227729937649e-16,
    "shuffle": 2.1096369732501988e-16,
    "tail": 0.4253160914173417
+  },
+  "reversal_learnability_gap": {
+   "location": 0.0,
+   "scale": 0.0,
+   "sign": 0.0019625784026240166,
+   "reversal": 1.3868063937892499,
+   "shuffle": 0.6664688069291378,
+   "tail": 0.5296311103867446
   }
  },
  "spread": {
@@ -307,7 +323,8 @@
   "vol_of_vol": 0.11867393798819798,
   "multiscaling": 0.02628451366420527,
   "variance_ratio_20": 0.22429789295491953,
-  "drift": 0.032891412086018125
+  "drift": 0.032891412086018125,
+  "reversal_learnability_gap": 0.009496136828590074
  },
  "artifacts": [
   {
@@ -331,7 +348,8 @@
    "acf_return_1",
    "aggregational_gaussianity",
    "vol_of_vol",
-   "variance_ratio_20"
+   "variance_ratio_20",
+   "reversal_learnability_gap"
   ],
   "scale": [
    "excess_kurtosis",
@@ -349,7 +367,8 @@
    "vol_of_vol",
    "multiscaling",
    "variance_ratio_20",
-   "drift"
+   "drift",
+   "reversal_learnability_gap"
   ],
   "sign": [
    "excess_kurtosis",

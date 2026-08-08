@@ -111,6 +111,13 @@
    "calendar_span": 17.922484582802422,
    "deff_span": 6.918683591391375,
    "rho_span": 0.3009500131215953
+  },
+  "reversal_learnability_gap": {
+   "legacy_k": 52.082703197685944,
+   "calendar_year": 42.324469962165,
+   "calendar_span": 21.307316769668724,
+   "deff_span": 5.81959715249157,
+   "rho_span": 0.24506426199109677
   }
  },
  "per_index_vs_garch_t": {

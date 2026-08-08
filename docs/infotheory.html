@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>情報理論と epiplexity の基礎 — sieve-bench</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm 20mm 20mm; }
+  :root {
+    --ink: #14181f; --muted: #55606f;
+    --rule: #c8d0da; --rule-soft: #e3e8ee;
+    --accent: #1f5fa8; --signal: #b8471f; --panel: #f5f7fa;
+    --lat: "Liberation Sans", "DejaVu Sans", sans-serif;
+    --math: "Liberation Serif", "DejaVu Serif", serif;
+    --mono: "DejaVu Sans Mono", "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--lat); font-size: 10.2pt; line-height: 1.85;
+         color: var(--ink); text-align: justify; }
+  h1 { font-size: 21pt; line-height: 1.35; margin: 0 0 2mm; }
+  h2 { font-size: 14pt; margin: 0 0 4mm; padding-bottom: 2mm;
+       border-bottom: 1.2pt solid var(--ink); break-after: avoid; }
+  h3 { font-size: 11pt; margin: 7mm 0 2mm; color: var(--accent); break-after: avoid; }
+  p { margin: 0 0 3mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  .chapter { break-before: page; }
+  .cover { border-bottom: 2.5pt solid var(--ink); padding-bottom: 6mm; margin-bottom: 6mm; }
+  .cover .kicker { font-family: var(--mono); font-size: 8pt; letter-spacing: .18em;
+                   text-transform: uppercase; color: var(--muted); margin-bottom: 3mm; }
+  .cover .sub { font-size: 11pt; color: var(--muted); margin-top: 2mm; }
+  .math, var { font-family: var(--math); font-style: italic; }
+  .up { font-style: normal; }
+  .eq { font-family: var(--math); text-align: center; margin: 4mm 0; font-size: 11pt;
+        break-inside: avoid; }
+  .eq .note { font-family: var(--lat); font-style: normal; font-size: 8.6pt;
+              color: var(--muted); display: block; margin-top: 1mm; }
+  .box { background: var(--panel); border: .6pt solid var(--rule);
+         padding: 3.5mm 4.5mm; margin: 4mm 0; break-inside: avoid; }
+  .box .t { font-family: var(--mono); font-size: 8pt; letter-spacing: .1em;
+            color: var(--muted); text-transform: uppercase; margin-bottom: 1.5mm; }
+  .box p:last-child, .box pre:last-child { margin-bottom: 0; }
+  .key { border-left: 2.5pt solid var(--signal); padding: 1mm 0 1mm 4mm;
+         margin: 4mm 0; break-inside: avoid; }
+  .key p:last-child { margin-bottom: 0; }
+  pre { font-family: var(--mono); font-size: 8.4pt; line-height: 1.6;
+        background: var(--panel); border: .6pt solid var(--rule-soft);
+        padding: 3mm; margin: 3mm 0; overflow-x: auto; white-space: pre;
+        break-inside: avoid; }
+  code { font-family: var(--mono); font-size: .9em; }
+  table { width: 100%; border-collapse: collapse; font-size: 8.8pt;
+          margin: 3mm 0; break-inside: avoid; }
+  th, td { padding: 1.4mm 2mm; text-align: right;
+           border-bottom: .5pt solid var(--rule-soft); }
+  th { border-bottom: 1pt solid var(--rule); color: var(--muted); font-weight: normal; }
+  th:first-child, td:first-child { text-align: left; }
+  td.num { font-family: var(--mono); }
+  .hit { color: var(--signal); font-weight: bold; }
+  .dim { color: var(--muted); }
+  .term { font-weight: bold; color: var(--accent); }
+  .toc { font-size: 9.4pt; }
+  .toc div { display: flex; gap: 3mm; margin-bottom: 1.2mm; }
+  .toc .n { font-family: var(--mono); color: var(--muted); width: 8mm; flex: none; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">sieve-bench / information theory &amp; epiplexity</div>
+  <h1>情報理論と epiplexity の基礎<br>—— 観測者の計算力が「情報」を決める</h1>
+  <div class="sub">前提知識は高校数学と、前作『数学的基礎』程度。記号は出た順に定義します。</div>
+</div>
+
+<p>この文書は、<code>reversal_learnability_gap</code>（17個目の統計量）の土台になっている
+情報理論を、ゼロから積み上げて説明します。ゴールは1つの文を完全に理解することです：</p>
+
+<div class="key">
+  <p><b>計算が無制限の観測者にとって、系列とその逆再生は同じ情報を持つ。
+  計算が有限の観測者にとっては、同じとは限らない。</b><br>
+  —— だから「学びやすさの差」は時間の矢の測定になる。</p>
+</div>
+
+<div class="box">
+  <div class="t">目次</div>
+  <div class="toc">
+    <div><span class="n">1</span><span>情報は「符号の長さ」である — Shannon エントロピー</span></div>
+    <div><span class="n">2</span><span>間違った符号の追加料金 — KL ダイバージェンス</span></div>
+    <div><span class="n">3</span><span>最短プログラムの長さ — Kolmogorov 複雑性</span></div>
+    <div><span class="n">4</span><span>「ランダム」の定義は観測者で決まる — Martin-Löf から暗号へ</span></div>
+    <div><span class="n">5</span><span>epiplexity — 計算量制約つきの情報</span></div>
+    <div><span class="n">6</span><span>時間の矢の3つの測り方</span></div>
+    <div><span class="n">7</span><span>着地：reversal_learnability_gap</span></div>
+    <div><span class="n">8</span><span>用語表と文献</span></div>
+  </div>
+</div>
+
+<!-- ==================================================== 1. Shannon -->
+<div class="chapter">
+<h2>1. 情報は「符号の長さ」である — Shannon エントロピー</h2>
+
+<h3>何に困っているか</h3>
+<p>「このデータにはどれだけ情報があるか」を数で言いたい。
+Shannon (1948) の答えは操作的です：<b>それを伝えるのに最低何ビット要るか。</b></p>
+
+<h3>定義と、手で確かめられる例</h3>
+<p>出目が4つのサイコロを考えます。確率は <span class="math">p</span> = (1/2, 1/4, 1/8, 1/8)。
+よく出る目に短い符号を割り当てます：</p>
+
+<pre>出目      確率     符号     符号長
+ A        1/2      0        1
+ B        1/4      10       2
+ C        1/8      110      3
+ D        1/8      111      3
+
+期待符号長 = 1/2·1 + 1/4·2 + 1/8·3 + 1/8·3 = 1.75 ビット</pre>
+
+<p>そして各出目の <span class="term">自己情報量</span>（驚きの量）を
+<span class="math">−log<sub class="up">2</sub> p</span> と定義すると、
+A は 1、B は 2、C・D は 3——**上の符号長と一致します**。
+<span class="term">Shannon エントロピー</span>はその期待値です：</p>
+
+<div class="eq">
+  H(X) = −Σ<sub class="up">x</sub> p(x) log<sub class="up">2</sub> p(x)
+  <span class="note">この例では H = 1.75 ビット。どんな符号を工夫しても、平均でこれより短くはできない</span>
+</div>
+
+<div class="key">
+  <p><b>この文書で一番使う言い換え：</b>確率モデル <span class="math">P</span> でデータ
+  <span class="math">x</span> を圧縮すると、符号長は <span class="math">−log P(x)</span> ビットになる。<br>
+  つまり<b>負対数尤度（NLL）＝符号長</b>。「モデルの当てはまりが良い」と
+  「そのモデルで短く圧縮できる」は同じことです。
+  <code>reversal_learnability_gap</code> の「1点あたり NLL」は、
+  文字通り「1観測あたり何ビット（nat）で書けるか」です。</p>
+</div>
+
+<h3>Shannon の情報観の限界</h3>
+<p>Shannon の情報は<b>分布</b>の性質です。「この1本の系列に構造があるか」には
+そのままでは答えません。たとえば <code>0101010101…</code> と完全にでたらめな列は、
+0 と 1 が半々という周辺分布だけ見れば同じです。1本の対象の構造を測るには
+別の道具が要ります（3章）。</p>
+</div>
+
+<!-- ==================================================== 2. KL -->
+<div class="chapter">
+<h2>2. 間違った符号の追加料金 — KL ダイバージェンス</h2>
+
+<h3>定義</h3>
+<p>データは <span class="math">P</span> から来るのに、<span class="math">Q</span> 用に
+設計した符号で圧縮したとします。平均符号長は最適より必ず長くなり、
+その<b>超過分</b>が <span class="term">KL ダイバージェンス</span>です：</p>
+
+<div class="eq">
+  KL(P‖Q) = Σ<sub class="up">x</sub> p(x) log<sub class="up">2</sub> [ p(x) / q(x) ]
+  <span class="note">「P のデータを Q の符号で送るときの、1標本あたりの追加料金」。0 になるのは P = Q のときだけ</span>
+</div>
+
+<div class="box">
+  <div class="t">数値例</div>
+<pre>P = (3/4, 1/4),  Q = (1/2, 1/2)
+
+KL(P‖Q) = 3/4·log2(3/2) + 1/4·log2(1/2) = 0.1887 ビット
+KL(Q‖P) = 1/2·log2(2/3) + 1/2·log2(2)   = 0.2075 ビット</pre>
+  <p><b>非対称です。</b>KL は距離（metric）ではなく「向きのある超過料金」。
+  この非対称性が、あとで時間の矢とつながります。</p>
+</div>
+
+<h3>この研究での既出の使われ方</h3>
+<ul>
+  <li><b>エントロピー生成</b>（6章）——順方向の経路分布と逆方向の経路分布の KL</li>
+  <li><b>energy 検定</b>——KL とは別の2標本距離だが、役割は同種（分布のずれの定量化）</li>
+  <li>epiplexity 論文の <b>requential 符号化</b>——教師と生徒のモデルの KL の累積で
+      「学習された構造の量」を測る（5章）</li>
+</ul>
+</div>
+
+<!-- ==================================================== 3. Kolmogorov -->
+<div class="chapter">
+<h2>3. 最短プログラムの長さ — Kolmogorov 複雑性</h2>
+
+<h3>何に困っているか</h3>
+<p>分布ではなく<b>1本の対象</b>の情報量を測りたい。
+<code>0101…01</code>（500回繰り返し）は 1000 文字だが、
+「<code>01</code> を500回」と言えば済む。真にでたらめな 1000 文字は、そう縮まない。</p>
+
+<h3>定義</h3>
+<div class="eq">
+  K(x) = 「x を出力して停止する最短プログラムの長さ（ビット）」
+  <span class="note">Kolmogorov (1968), Chaitin (1975)。プログラミング言語の選び方は
+  定数の差にしかならない（不変性定理）</span>
+</div>
+
+<ul>
+  <li><code>0101…01</code> → K は log(反復回数) 程度。<b>圧縮できる＝構造がある</b></li>
+  <li>π の小数展開 → 見た目はでたらめだが、π を計算するプログラムは短い → K は小さい</li>
+  <li>真にランダムな n ビット → K ≈ n。<b>自分自身より短く書けない＝構造が無い</b></li>
+</ul>
+
+<p>ただし <b>K は計算不能</b>です（停止性問題に帰着する）。理論の基準器であって、
+実務で直接計算する量ではありません。</p>
+
+<h3>この文書の主役になる2つの性質</h3>
+<div class="eq">
+  性質A：K(f(x)) ≤ K(x) + K(f) + c
+  <span class="note">決定的な変換は情報を（プログラム f のぶん以上には）増やせない</span>
+</div>
+<div class="eq">
+  性質B：K(x) = K(reverse(x)) + O(1)
+  <span class="note">「逆順に並べる」はごく短いプログラムなので、系列とその逆再生の複雑さは実質同じ</span>
+</div>
+
+<div class="key">
+  <p><b>性質Bが、本リポジトリの不変性監査の「理論上限」版です。</b>
+  こちらの監査は「16個中14個の統計量が反転に厳密不変」という<b>個別の関数</b>の話でした。
+  Kolmogorov 複雑性は<b>計算無制限の観測者ですら</b>向きを（定数以上には）
+  区別しないと言っている。つまり「向きの情報」は、無制限の世界では存在しないに等しい。<br>
+  <b>それでも実際の学習器は向きで差を出す（LLM は逆順の英語が苦手）。この緊張を
+  解くのが5章です。</b></p>
+</div>
+</div>
+
+<!-- ==================================================== 4. randomness -->
+<div class="chapter">
+<h2>4. 「ランダム」の定義は観測者で決まる — Martin-Löf から暗号へ</h2>
+
+<h3>第1段階：すべての計算可能な検定に合格する（Martin-Löf）</h3>
+<p>「この列はランダムか」を、<b>検定に落ちないこと</b>として定義します。
+Martin-Löf (1966)：<b>計算可能なあらゆる</b>ランダム性検定に合格する列が
+ランダムである。これは「圧縮できない（K(x<sub class="up">1:n</sub>) ≥ n − c）」と同値です。</p>
+
+<h3>第2段階：多項式時間の検定だけに合格すればよい（暗号）</h3>
+<p>暗号の <span class="term">擬似乱数生成器</span>（PRG）は、短い種
+<span class="math">k</span> ビットから長い列 <span class="math">n</span> ビットを作ります。
+定義は「<b>多項式時間で動くどんな判別器も</b>、本物の乱数と区別できない」。</p>
+
+<div class="box">
+  <div class="t">ここが決定的な転回</div>
+  <p>PRG の出力は、<b>無制限の観測者には全然ランダムではありません</b>
+  （K ≈ 種の長さ k。種を見つければ全部再現できる）。
+  しかし<b>多項式時間の観測者には、本物の乱数と完全に同じに見える。</b></p>
+  <p><b>「ランダムかどうか」は対象の性質ではなく、対象と観測者の関係である</b>——
+  これが5章の全部の土台です。</p>
+</div>
+
+<h3>一方向性関数 — 向きの非対称の源泉</h3>
+<p><span class="term">一方向性関数</span>（OWF）は「計算するのは簡単、逆算するのは
+（多項式時間では）実質不可能」な関数です。掛け算は簡単で素因数分解は難しい、が
+directional の代表例。現代暗号はこの存在を仮定して建っています。</p>
+
+<div class="key">
+  <p>3章の性質Bを思い出してください：無制限の世界では
+  K(f) = K(f<sup class="up">−1</sup>) + O(1)——<b>関数と逆関数は同じ複雑さ</b>です。<br>
+  一方向性関数は、<b>計算量を固定した瞬間にこの対称性が壊れる</b>ことの表明です。
+  順向きは easy、逆向きは hard。<b>時間の矢が「計算量の世界」にだけ存在しうる</b>
+  数学的な根拠がここにあります。</p>
+</div>
+</div>
+
+<!-- ==================================================== 5. epiplexity -->
+<div class="chapter">
+<h2>5. epiplexity — 計算量制約つきの情報</h2>
+
+<p>ここからが Finzi, Qiu, Jiang, Izmailov, Kolter &amp; Wilson (2026,
+arXiv:2601.03220) です。</p>
+
+<h3>動機：3つの見かけのパラドックス</h3>
+<ol>
+  <li><b>決定的な変換は情報を増やせない</b>（性質A）はずなのに——PRG は乱数を
+      「作り」、AlphaZero は自己対戦から超人的な知識を「作る」</li>
+  <li><b>情報は順序に依存しない</b>（同時分布が同じなら X→Y でも Y→X でも総情報量は同じ）
+      はずなのに——LLM は英語を逆順で学ぶと損失が悪化する。<b>時間の矢を拾っている</b></li>
+  <li><b>尤度最大化は分布合わせにすぎない</b>はずなのに——ライフゲームの盤面を学んだ
+      モデルは、生成規則そのものには無い「グライダー」などの創発構造を学ぶ</li>
+</ol>
+<p>3つとも、<b>観測者の計算が無制限だという暗黙の仮定</b>を外すと解消します。</p>
+
+<h3>途中の失敗も教材になる：素朴な定義は潰れる</h3>
+<p>「構造の量」を測る古い試みに sophistication（Koppel 1988）があります。
+これを素朴に時間制限しても駄目なことを、論文は付録で証明しています
+（Lemma 29）：<b>タイムアウト付きのインタプリタ</b>という定数サイズの部品で
+全情報をデータ側に押し込めてしまい、どんな列でも「構造 ≈ 定数」になる。</p>
+<p class="dim">——「時間制限を入れれば bounded observer の理論になる」ほど単純ではない、
+という警告。定義は壊れ方まで込みで検証する必要がある（本リポジトリの
+`selftest.py` の思想と同じ）。</p>
+
+<h3>本体の定義</h3>
+<p><span class="math">T</span> 時間で<b>サンプリングも確率評価もできる</b>プログラム
+（＝計算量制約つき確率モデル）の全体を <span class="math">P<sub class="up">T</sub></span>
+とし、データ <span class="math">X</span> に対して<b>2部符号</b>を最小化します：</p>
+
+<div class="eq">
+  P* = argmin<sub class="up">P∈P_T</sub> { |P| + E[−log P(X)] }
+  <span class="note">|P| はモデル自身の記述長（プログラムの長さ）、E[−log P(X)] はモデルで
+  データを書くのに要るビット数。合計が「T 時間の観測者にとっての最短の説明」</span>
+</div>
+
+<div class="eq">
+  S<sub class="up">T</sub>(X) := |P*|　（<span class="term">epiplexity</span>：学べる構造の量）<br>
+  H<sub class="up">T</sub>(X) := E[−log P*(X)]　（<span class="term">time-bounded entropy</span>：どうしても残る乱雑さ）
+</div>
+
+<div class="box">
+  <div class="t">読み方</div>
+  <p><b>epiplexity（S_T）＝この計算予算の観測者が、データから吸い出して
+  モデル側に固定化できる構造の量。</b><br>
+  <b>time-bounded entropy（H_T）＝それをやり尽くしてもなお予測できない残り。</b></p>
+  <p>PRG の出力：無制限なら K ≈ k（種）だが、多項式時間の観測者には
+  <b>H ≈ n（ほぼ全部が乱雑）、S ≈ 0（学べる構造なし）</b>（論文 Theorem 9）。
+  「観測者にとってのランダムさ」が定義に正しく織り込まれている。</p>
+  <p>逆に、決定的な計算（セルオートマトン、カオス、AlphaZero）は
+  <b>bounded observer にとっての情報を本当に増やせる</b>（Theorem 18）——
+  パラドックス1の解決。</p>
+</div>
+
+<h3>パラドックス2の解決 = 時間の矢の定式化</h3>
+<p>論文 Theorem 13：<b>一方向性置換が存在するなら</b>、同一の同時分布 (X, Y) でも</p>
+
+<div class="eq">
+  H<sub class="up">poly</sub>(X│Y) + H<sub class="up">poly</sub>(Y) と
+  H<sub class="up">poly</sub>(Y│X) + H<sub class="up">poly</sub>(X)
+  <span class="note">——2つの「読む順序」の総符号長に、超対数的なギャップが生じうる</span>
+</div>
+
+<p>Shannon でも Kolmogorov でもこの2つは（定数を除き）等しい。
+<b>計算量を固定した瞬間、分解の順序が情報量を変える。</b>
+論文の実験：チェスの棋譜を「手順→最終盤面」で学ぶのと「最終盤面→手順」で学ぶのでは、
+後者のほうが entropy も epiplexity も高い——難しい向きは、より多くの構造の獲得を
+<b>強制する</b>。そして「このギャップは計算予算が小さいと消える。
+表面統計しか学ばれないから」。</p>
+
+<h3>測り方（彼らの実装）と、その重さ</h3>
+<ul>
+  <li><b>prequential 符号化</b>：訓練中の損失曲線の下側面積（最終損失より上の部分）
+      ≈ モデルの記述長。<b>「学習曲線がゆっくり降りる＝学ぶべき構造が多い」の定量化</b></li>
+  <li><b>requential 符号化</b>：教師モデルと生徒モデルの KL の累積。より正確だが、
+      EMA 教師や KL 上限凍結などの安定化装置が要る</li>
+  <li>どちらも <b>1つの数字のためにハイパラ掃引一式</b>（μP転送・凸包・中央値
+      ヒューリスティクス）が要る。彼ら自身が推定ノイズと系統誤差を明記している</li>
+</ul>
+<p class="dim">→ 金融の窓 1000 点にフルの装置は過剰。7章の統計量は、この枠組みの
+「プローブ族を固定した最小のパラメトリック版」である。</p>
+</div>
+
+<!-- ==================================================== 6. arrows -->
+<div class="chapter">
+<h2>6. 時間の矢の3つの測り方</h2>
+
+<h3>まず「時間反転で何が保たれるか」を正確に</h3>
+<p>おもちゃの例：のこぎり波の価格 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, …
+（ゆっくり上がって一気に落ちる）。</p>
+
+<pre>順方向の変化   +1 +1 +1 +1 −4  +1 +1 +1 +1 −4 …   「小さい上げ4回、大きい下げ1回」
+逆再生の変化   +4 −1 −1 −1 −1  +4 −1 −1 −1 −1 …   「大きい上げ1回、小さい下げ4回」</pre>
+
+<p><b>価格の頻度分布（ヒストグラム）は完全に同じ。</b>向きの情報は
+「どの値が出るか」ではなく<b>「どの順で出るか」</b>にだけ入っています。</p>
+
+<div class="box">
+  <div class="t">注意：リターンの反転と価格の反転は別の変換</div>
+  <p>本リポジトリの不変性監査の reversal は<b>リターン系列の順序だけ</b>を逆にします
+  （値の多重集合は不変）。価格の経路を逆再生すると、リターンは
+  <b>順序反転＋符号反転</b>されます（上の例：+1 が −1 に）。<br>
+  監査で sign と reversal を別の列にしてあるのはこのためで、
+  leverage（順序に敏感）と gain/loss asymmetry（経路に敏感）が
+  別の統計量である理由もここにあります。</p>
+</div>
+
+<h3>3つの軸</h3>
+<table>
+  <tr><th>軸</th><th style="text-align:left">測るもの</th><th style="text-align:left">反転への感度</th><th style="text-align:left">本リポジトリでの実装</th></tr>
+  <tr><td>① 形</td><td style="text-align:left">値の分布（Shannon / Rényi / Tsallis）</td>
+      <td style="text-align:left"><b>盲目</b>（shuffle にも不変）</td><td style="text-align:left">尖度・Hill などの周辺統計</td></tr>
+  <tr><td>② 分布の矢</td><td style="text-align:left">順方向と逆方向の<b>経路分布</b>の距離</td>
+      <td style="text-align:left">これが定義</td><td style="text-align:left">順序パターンの反転非対称（エントロピー生成）</td></tr>
+  <tr><td>③ 学習の矢</td><td style="text-align:left">固定した観測者にとっての<b>学びやすさ</b>の差</td>
+      <td style="text-align:left">観測者に相対的</td><td style="text-align:left"><b>reversal_learnability_gap</b></td></tr>
+</table>
+
+<h3>②の背後：エントロピー生成と「平衡」</h3>
+<p>定常過程が<span class="term">可逆</span>とは、任意の窓で
+P(x<sub class="up">1</sub>…x<sub class="up">n</sub>) =
+P(x<sub class="up">n</sub>…x<sub class="up">1</sub>) が成り立つこと。
+物理では可逆 ⟺ 詳細釣り合い ⟺ <b>平衡</b>であり、非平衡の度合いは</p>
+
+<div class="eq">
+  σ = lim (1/n) · KL( P<sub class="up">順</sub>(x<sub class="up">1..n</sub>) ‖
+  P<sub class="up">逆</sub>(x<sub class="up">1..n</sub>) )
+  <span class="note">エントロピー生成率。2章の KL がここで再登場する。可逆なら 0</span>
+</div>
+
+<p>実測（本リポジトリ）：実データ6指数は不可逆（p=0.005）、対称 GARCH と
+Franke-Westerhoff は可逆と区別がつかない、GJR / EGARCH は不可逆。</p>
+
+<h3>②と③の論理関係（ここは正確に）</h3>
+<div class="key">
+  <p><b>③ ⇒ ②：学習の矢が立てば、分布の矢は必ず立っている。</b><br>
+  もし過程が厳密に可逆なら、順方向のデータと逆方向のデータは<b>同分布</b>なので、
+  どんな観測者のどんな学びやすさも期待値では等しい。ギャップの期待値が 0 でない
+  ことは、不可逆性の<b>証人</b>になる。</p>
+  <p><b>② ⇏ ③：逆は成り立たない。</b>不可逆でも、選んだプローブ族がその手がかりを
+  使えなければギャップは出ない。③は<b>プローブに相対的な下界の証人</b>であって、
+  不可逆性の完全な測定ではない。</p>
+</div>
+
+<p>そして5章の Theorem 13 が言うのは、②と③の間に<b>原理的な隙間</b>があること——
+無制限の観測者には見えない（Kolmogorov では対称な）向きの差が、
+多項式時間の観測者には残ることが（暗号仮定の下で）ありうる。</p>
+</div>
+
+<!-- ==================================================== 7. landing -->
+<div class="chapter">
+<h2>7. 着地：reversal_learnability_gap</h2>
+
+<h3>定義</h3>
+<div class="eq">
+  gap(x) = NLL<sub class="up">min</sub>(reverse(x)) − NLL<sub class="up">min</sub>(x)
+  <span class="note">同じプローブ族（GJR-t、5パラメータ）を順方向と逆方向に別々に最尤で当てた、
+  1点あたり符号長の差。正 = 「逆再生した市場のほうが、この族には説明しにくい」</span>
+</div>
+
+<p>1章の言い換えそのままです：<b>NLL は符号長</b>なので、これは
+「同じ計算予算の観測者が、順と逆でデータを何ビットで書けるか」の差——
+epiplexity 論文の損失曲線ギャップの、プローブ族を固定した最小版です。</p>
+
+<h3>この統計量が持つ、他に無い性質</h3>
+<ul>
+  <li><b>反対称性が構成から厳密</b>：gap(reverse(x)) = −gap(x)。
+      当てはめを向きについて対称な手続きにしてあるので、恒等的に成り立つ</li>
+  <li><b>帰無が定義から出る</b>：可逆な過程では順逆が同分布 → 期待値は厳密に 0。
+      <b>実データとの比較を必要としない</b>ので、6ブロック問題（独立な暦の不足）が
+      この統計量の帰無には入らない</li>
+  <li><b>観測者は宣言されている</b>：値は GJR-t という族に相対的（5章の教訓）。
+      プローブの変更は統計量の変更として扱う（<code>probes.py</code>）</li>
+</ul>
+
+<h3>較正（実測値、`probes.py --calibrate`）</h3>
+<table>
+  <tr><th>系列</th><th>中央値</th><th>四分位幅</th><th>gap&gt;0 の窓</th><th style="text-align:left">読み</th></tr>
+  <tr><td>gaussian</td><td class="num">−0.00001</td><td class="num">0.00043</td><td class="num">46%</td>
+      <td style="text-align:left">厳密に可逆 → ちゃんと 0</td></tr>
+  <tr><td>student_t</td><td class="num">+0.00000</td><td class="num">0.00163</td><td class="num">50%</td>
+      <td style="text-align:left">同上</td></tr>
+  <tr><td>iid_bootstrap</td><td class="num">−0.00003</td><td class="num">0.00183</td><td class="num">49%</td>
+      <td style="text-align:left">同上</td></tr>
+  <tr><td>garch_norm</td><td class="num">+0.00268</td><td class="num">0.00373</td><td class="num">82%</td>
+      <td style="text-align:left"><b>対称 GARCH の弱い不可逆性を検出</b></td></tr>
+  <tr><td>garch_t</td><td class="num">+0.00300</td><td class="num">0.00524</td><td class="num">86%</td>
+      <td style="text-align:left">同上</td></tr>
+  <tr><td class="hit">実データ 124窓</td><td class="num hit">+0.00635</td><td class="num">0.00950</td><td class="num hit">87%</td>
+      <td style="text-align:left">市場の矢</td></tr>
+  <tr><td>gjr_t</td><td class="num">+0.01693</td><td class="num">0.00809</td><td class="num">98%</td>
+      <td style="text-align:left">実データより<b>強い</b>（下記）</td></tr>
+  <tr><td>egarch_t</td><td class="num">+0.01809</td><td class="num">0.00920</td><td class="num">100%</td>
+      <td style="text-align:left">同上</td></tr>
+</table>
+
+<p>順序がきれいに出ます：<b>可逆な帰無（≈0）＜ 対称 GARCH（弱い矢）＜ 実データ ＜
+非対称 GARCH 族。</b>特に2点：</p>
+
+<ul>
+  <li><b>対称 GARCH は厳密には可逆でない</b>（r² が非ガウスの ARMA になるため）。
+      順序パターン検定では p=0.065 と境界だった弱い矢を、この統計量は
+      82〜86% の窓で正、と明瞭に拾う。<b>②より③のほうが、このプローブでは高感度</b></li>
+  <li><b>GJR / EGARCH は「実データより不可逆」</b>。プローブ族が GJR 自身なので、
+      順方向は完璧に書けて逆方向だけ苦しくなる——ギャップが誇張される。
+      観測者依存性（5章）が実物で見えている。<b>だからこそプローブは宣言制</b></li>
+</ul>
+
+<h3>設計過程で入れた再発防止（前作の教訓の適用）</h3>
+<ul>
+  <li>最初の実装は逆方向だけ温間開始が1個多く、<b>可逆な帰無で中央値が −0.0002 に
+      偏っていた</b>。較正で検出し、両方向に開始点を交換する対称プロトコルに修正。
+      修正後の帰無は 46〜50% / ±0.00003 に中心化</li>
+  <li>標準化後に 1e-8 で量子化し、位置・尺度不変を<b>ビット単位で厳密</b>にした
+      （設計契約 <code>SPEC: must_invariant=("location","scale")</code> を
+      <code>invariance.py</code> が機械検査する）</li>
+  <li>最適化予算 <code>maxiter</code> は宣言された自由度で、値がそれに鈍いことを
+      <code>sensitivity.py</code> が検査する</li>
+</ul>
+
+<h3>これが測って「いない」もの</h3>
+<ul>
+  <li><b>epiplexity そのものではない。</b>S_T（モデル記述長）は族を固定したので定数。
+      測っているのは H_T 側の順逆差の、プローブ相対版</li>
+  <li><b>不可逆性の全量ではない。</b>③⇒②の証人であって、プローブに見えない矢は拾えない</li>
+  <li><b>「良いモデルか」ではない。</b>gjr_t は実データよりギャップが大きい——
+      この統計量単独では「矢が強すぎる」偽物を褒めてしまう。だから単独では使わず、
+      バッテリーの1行として、分布側の統計量と並べて使う</li>
+</ul>
+</div>
+
+<!-- ==================================================== 8. glossary -->
+<div class="chapter">
+<h2>8. 用語表と文献</h2>
+
+<table>
+  <tr><th style="width:30%">用語</th><th style="text-align:left">一言で</th></tr>
+  <tr><td>自己情報量 −log p</td><td style="text-align:left">その出来事を伝える符号長。珍しいほど長い</td></tr>
+  <tr><td>Shannon エントロピー H</td><td style="text-align:left">符号長の期待値。分布の性質</td></tr>
+  <tr><td>NLL（負対数尤度）</td><td style="text-align:left">モデル P でデータを書いたときの符号長 −log P(x)</td></tr>
+  <tr><td>KL(P‖Q)</td><td style="text-align:left">Q 用の符号で P のデータを送る追加料金。非対称</td></tr>
+  <tr><td>Kolmogorov 複雑性 K(x)</td><td style="text-align:left">x を出力する最短プログラム長。計算不能</td></tr>
+  <tr><td>Martin-Löf ランダム</td><td style="text-align:left">計算可能な全検定に合格 ⟺ 圧縮不能</td></tr>
+  <tr><td>PRG / 一方向性関数</td><td style="text-align:left">多項式時間の観測者を欺く装置／順は easy 逆は hard</td></tr>
+  <tr><td>MDL 2部符号</td><td style="text-align:left">|モデル| + |モデルでのデータ| を最小化する説明</td></tr>
+  <tr><td>epiplexity S_T</td><td style="text-align:left">T 時間の観測者が学べる構造の量（最適モデルの記述長）</td></tr>
+  <tr><td>time-bounded entropy H_T</td><td style="text-align:left">その観測者にとって残る乱雑さ</td></tr>
+  <tr><td>可逆／平衡</td><td style="text-align:left">P(x₁…xₙ)=P(xₙ…x₁)。エントロピー生成 0</td></tr>
+  <tr><td>エントロピー生成 σ</td><td style="text-align:left">順逆の経路分布の KL 率。分布の矢</td></tr>
+  <tr><td>学習の矢</td><td style="text-align:left">固定観測者の順逆の符号長差。プローブ相対の証人</td></tr>
+  <tr><td>プローブ族</td><td style="text-align:left">宣言された観測者（ここでは GJR-t 最尤）</td></tr>
+</table>
+
+<h3>文献（本文で使ったもの）</h3>
+<ul style="font-size:9pt">
+  <li>Shannon (1948). A Mathematical Theory of Communication.</li>
+  <li>Kolmogorov (1968); Chaitin (1975) — アルゴリズム的複雑性。</li>
+  <li>Martin-Löf (1966) — ランダム列の定義。</li>
+  <li>Blum &amp; Micali (1982); Yao (1982) — PRG と一方向性関数。</li>
+  <li>Koppel (1988) — sophistication。Rissanen (2004); Grünwald (2007) — MDL。</li>
+  <li><b>Finzi, Qiu, Jiang, Izmailov, Kolter, Wilson (2026). From Entropy to
+      Epiplexity. arXiv:2601.03220</b> — 5章の全部。Theorem 9/13/18、Lemma 29、
+      prequential/requential 推定、チェス・ECA 実験。</li>
+  <li>Papadopoulos et al. (2024) — LLM の時間の矢（逆順英語の損失差）。</li>
+  <li>Jensen, Johansen &amp; Simonsen (2003) — inverse statistics（gain/loss）。</li>
+  <li>Ramsey &amp; Rothman (1996) — 経済時系列の時間不可逆性。</li>
+  <li>Zanin (2023) — 記号化に基づく不可逆性検定の注意点。</li>
+  <li>Glosten-Jagannathan-Runkle (1993) — プローブ族 GJR-GARCH。</li>
+</ul>
+
+<p class="dim" style="margin-top:6mm">数値はすべて sieve-bench v0.4 の
+<code>probes_calibration.json</code> ほかの出力による。前作
+『sieve-bench の数学的基礎』（KS・置換検定・実効標本数・ablation）と対で読む想定。</p>
+</div>
+
+</body>
+</html>

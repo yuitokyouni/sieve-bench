@@ -267,6 +267,50 @@ def drift(r):
     return float(np.mean(r) / s)
 
 
+def reversal_learnability_gap(r, maxiter=3000):
+    """時間の矢を、**学びやすさの差**として測る。17個目。
+
+    同じモデル族（GJR-t、5パラメータ、最尤）を系列の順方向と逆方向に別々に
+    当て、1点あたり負対数尤度の差を返す：
+
+        gap = NLL(逆向きに当てた最良モデル) − NLL(順向きに当てた最良モデル)
+
+    正なら「この族にとって、逆再生した市場のほうが説明しにくい」。
+
+    ## なぜ既存の統計量と別枠か
+
+    分布の時間反転非対称（leverage / gain_loss_asymmetry が拾うもの）とは
+    測っている軸が違う。ここで測るのは Finzi et al. (2026, arXiv:2601.03220)
+    の意味での**計算量制約つき観測者にとっての向きの差**である。彼らの
+    Theorem 13：一方向性置換の存在の下で、同一の同時分布でも条件付けの向きに
+    よって多項式時間の entropy にギャップが生じる。K(f) = K(f^{-1}) + O(1) は
+    計算が無制限のときにしか成り立たない。本統計量はその最小のパラメトリック版
+    ——ニューラルネットの損失曲線の代わりに、宣言したプローブ族の最尤 NLL を使う。
+
+    ## 帰無が定義から出る
+
+    構成上 gap(rev(x)) = −gap(x)（反対称）。可逆な過程では順逆が同分布なので
+    **期待値は厳密に 0。参照データが要らない**——実データ側の窓の依存構造
+    （6ブロック問題）がこの統計量の帰無には入らない。
+    最適化ノイズの床と可逆生成器での分布は `python3 probes.py --calibrate` が測る。
+
+    ## 観測者依存性（宣言）
+
+    値は**プローブ族に相対的**である。対称な族で測れば向きの主要な手がかり
+    （符号チャネル）が使えず、別の値になる。これは欠陥ではなく time-bounded な
+    情報量の定義の一部なので、プローブは `probes.py` に宣言し、変更は
+    統計量の変更として扱う。
+
+    スケール・位置不変（標準化＋量子化で厳密に）。`maxiter` は最適化の
+    予算で、値がこれ有に鈍いことを `sensitivity.py` が検査する。
+    """
+    from probes import reversal_gap
+    r = np.asarray(r, dtype=float)
+    if len(r) < 300 or not np.isfinite(r).all() or r.std() <= 0:
+        return np.nan
+    return float(reversal_gap(r, maxiter=maxiter))
+
+
 # 名前 → 関数。この並びがそのまま出力表の行になる。
 BATTERY = {
     "excess_kurtosis": excess_kurtosis,
@@ -285,6 +329,7 @@ BATTERY = {
     "multiscaling": multiscaling,
     "variance_ratio_20": variance_ratio_20,
     "drift": drift,
+    "reversal_learnability_gap": reversal_learnability_gap,
 }
 
 
@@ -336,6 +381,8 @@ SPEC = {
     "variance_ratio_20":         dict(must_invariant=("location", "scale"),
                                       params={"q": (10, 20, 40)}),
     "drift":                     dict(must_invariant=("scale",), params={}),
+    "reversal_learnability_gap": dict(must_invariant=("location", "scale"),
+                                      params={"maxiter": (1500, 3000, 6000)}),
 }
 
 
