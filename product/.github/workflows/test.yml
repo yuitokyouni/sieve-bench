@@ -1,0 +1,26 @@
+# CI for the extracted product repository (product/ as repo root).
+# While the product lives inside sieve-bench, the active copy of this job is
+# the repo-root workflow .github/workflows/product.yml.
+name: test
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv pip install --system -e ".[dev]"
+      - run: python -m pytest tests -q
+      - name: golden path smoke
+        run: |
+          sieve doctor
+          sieve test examples/csv_returns --suite financial-daily@1.0 \
+            --claim descriptive-market-dynamics --out /tmp/runs
+          sieve verify /tmp/runs/*

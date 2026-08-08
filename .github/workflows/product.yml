@@ -1,0 +1,40 @@
+# CI for the Sieve product living under product/ (see product/README.md).
+# The research code at the repo root has no workflow: its results are frozen
+# JSONs regenerated manually, and its data cannot be fetched in CI.
+name: product
+on:
+  push:
+    paths: ["product/**", ".github/workflows/product.yml"]
+  pull_request:
+    paths: ["product/**", ".github/workflows/product.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: product
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv pip install --system -e ".[dev]"
+      - run: python -m pytest tests -q
+      - name: golden path smoke
+        run: |
+          sieve doctor
+          sieve test examples/csv_returns --suite financial-daily@1.0 \
+            --claim descriptive-market-dynamics --out /tmp/runs
+          sieve verify /tmp/runs/*
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: product
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uvx ruff check src tests
