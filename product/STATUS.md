@@ -1,7 +1,8 @@
 # Status
 
-Updated: 2026-08-08. Spec: `SIEVE_PRODUCT_IMPLEMENTATION_SPEC` v0.1 (§16
-acceptance criteria; §22 ordered M0 → M1 only).
+Updated: 2026-08-09. Spec: `SIEVE_PRODUCT_IMPLEMENTATION_SPEC` v0.1 (§16
+acceptance criteria; §22 ordered M0 → M1 only), then M1.5 (public
+credibility release) inserted before M2.
 
 ## M0 — foundations: DONE
 
@@ -45,7 +46,32 @@ locally, offline, ~5 s.
       baseline-context column, no aggregate anywhere (`reporting/`)
 - [x] `sieve test/verify/report`, exit-code contract (eval ≠ exec failure)
 
-### Acceptance criteria → tests (all passing, 75 total)
+## M1.5 — public credibility release: DONE (v0.1.0)
+
+The bottleneck after M1 was no longer functionality; it was that nothing was
+citable or inspectable by a third party without installing anything.
+
+- [x] Standalone repository: `github.com/yuitokyouni/sieve`, canonical branch
+      `main`, extracted from the research repo with full product history
+      (`git subtree split`); sieve-bench linked as the research provenance
+- [x] Seal scope corrected for cross-machine reproduction: platform
+      fingerprint, filesystem paths and CLI invocation moved outside
+      `bundle_hash` (they remain in the bundle under the file-integrity
+      layer). Found by preparing the reproduction protocol, recorded in
+      `docs/architecture.md`; regression tests added
+- [x] Frozen browsable example: `docs/example-run/` (full run directory,
+      committed; `sieve verify docs/example-run` passes in a fresh clone),
+      report screenshot at the top of README
+- [x] README leads with the result, not the install
+- [x] Scope stated precisely: `financial-daily@1.0` assesses long-horizon
+      daily return simulations; microstructure simulations need their own
+      future suite (`market-microstructure@0.x`), not an adapter
+- [x] `docs/reproduce.md`: the independent-reproduction protocol with
+      expected statuses, `bundle_hash` and `suite_hash`
+- [x] Tagged `v0.1.0` (source commit, suite hash, example bundle hash pinned
+      in the tag annotation and CHANGELOG)
+
+### Acceptance criteria → tests (all passing, 78 total)
 
 | Criterion | Test |
 |---|---|
@@ -62,11 +88,24 @@ locally, offline, ~5 s.
 | Offline | `::test_offline_no_network_modules_in_product` |
 | CLI exit-code contract | `tests/unit/test_cli.py` |
 
-## Not in M1 (deliberately)
+## Not in M1/M1.5 (deliberately)
 
 Tier-1/2 adapters, `sieve compare`, multiscale/regime/intervention dimensions
 (they appear as NOT_TESTED, honestly), suite update tooling, any service
-component. Next milestone per spec §13: M2 (comparison + more claims).
+component.
+
+## Next milestone: Independent reproduction #1 — not M2
+
+Spec §13 orders M2 (compare + more claims) next, but a comparison feature
+nobody external has touched adds no information. The open question is whether
+an external researcher trusts this product contract, and code cannot answer
+it. The milestone is therefore: one named third party, in a clean
+environment, runs `docs/reproduce.md` end to end — clone, golden command,
+`leverage_asymmetry = FAIL`, `sieve verify`, seal comparison — and we record
+"Independently reproduced by X on YYYY-MM-DD" in the README. The sequence
+after that stays credibility-first: external model evaluation #1 → external
+author response #1 → community contribution #1 → private pilot #1. M2
+resumes when an external party actually needs comparison.
 
 ## Known limitations on record
 

@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sieve evaluation — Example GARCH(1,1)-t simulator</title>
+<style>
+  :root { --ink:#14181f; --muted:#5a6577; --rule:#d5dce4; --panel:#f5f7fa;
+          --pass:#1b7a44; --fail:#b8471f; --warn:#a06a00; --na:#5a6577; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 15px/1.7 system-ui, sans-serif; color:var(--ink); }
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.1rem; border-bottom: 2px solid var(--ink);
+       padding-bottom:.3rem; margin: 2.2rem 0 .8rem; }
+  .muted { color: var(--muted); }
+  .claim { background: var(--panel); border-left: 4px solid var(--ink);
+           padding: .8rem 1rem; margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .92em; }
+  th, td { text-align: left; padding: .45rem .6rem;
+           border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+  .st { font-weight: 700; font-size: .85em; letter-spacing: .03em; }
+  .st.PASS { color: var(--pass); } .st.FAIL { color: var(--fail); }
+  .st.WARN { color: var(--warn); }
+  .st.NOT_TESTED, .st.INSUFFICIENT { color: var(--na); }
+  .badge { display:inline-block; font-size:.72em; border:1px solid var(--rule);
+           border-radius:3px; padding:0 .35em; color:var(--muted); }
+  .finding { border:1px solid var(--rule); border-left:4px solid var(--fail);
+             padding:.8rem 1rem; margin:.8rem 0; }
+  .finding h3 { margin:.1rem 0 .4rem; font-size:1em; }
+  ul { margin:.3rem 0 .6rem 1.2rem; padding:0; }
+  li { margin-bottom:.25rem; }
+  footer { margin-top:3rem; border-top:1px solid var(--rule);
+           padding-top:1rem; font-size:.85em; color:var(--muted); }
+  code { background: var(--panel); padding:0 .3em; border-radius:3px;
+         font-size:.9em; }
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>Example GARCH(1,1)-t simulator <span class="muted">v1.0</span></h1>
+<div class="muted">Sieve evaluation · suite financial-daily@1.0.0
+· bundle <code>31bda432c319adfc…</code></div>
+
+<h2>1 · Claim under evaluation</h2>
+<div class="claim">
+  <b>descriptive-market-dynamics</b> — Simulated daily returns reproduce the descriptive dynamics of major equity-index daily returns: heavy-tailed marginals, power-law tail weight, volatility clustering and its persistence, sign-to-volatility asymmetry (leverage), near-unit variance ratios, and empirically small drift.
+  <div class="muted">Use case: Descriptive realism of an unconditional daily return stream — e.g. synthetic training data, method demonstrations, stress-scenario texture. NOT forecasting, NOT derivative pricing, NOT policy counterfactuals.</div>
+</div>
+<p class="muted">This report answers only: what evidence supports or contradicts
+using this simulation <em>for this claim</em>. It does not decide whether the
+model is “true”, and no aggregate score exists.</p>
+
+<h2>2 · Scope and reference</h2>
+<table>
+  <tr><th>Input</th><td><code>examples/csv_returns</code>
+      · sha256 <code>888413387c0f81bc…</code></td></tr>
+  <tr><th>Reference</th><td>Six major equity indices (S&P 500, FTSE 100, DAX, Nikkei 225, Hang Seng, EURO STOXX 50), daily closes 2001–2025, log returns, unit-sd scaled per index. — frozen derived
+      window statistics (124 windows,
+      calendar-blocked); raw reference series are not shipped</td></tr>
+  <tr><th>Windows</th><td>length 1000,
+      non-overlapping; 6 from input</td></tr>
+  <tr><th>Decision line</th><td>adjusted p &lt; 0.01
+      (holm-adjusted; nominal line calibrated
+      so its true size is 3–5% under the reference dependence)</td></tr>
+</table>
+
+<h2>3 · Validation profile</h2>
+<table>
+  <tr><th>Evidence dimension</th><th>Status</th><th>Basis / note</th></tr>
+  
+  <tr>
+    <td>marginal distribution</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td class="muted">excess_kurtosis::vs-reference</td>
+  </tr>
+  
+  <tr>
+    <td>tail behavior</td>
+    <td><span class="st FAIL">FAIL</span></td>
+    <td class="muted">hill_left::vs-reference, hill_right::vs-reference</td>
+  </tr>
+  
+  <tr>
+    <td>return dependence</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td class="muted">variance_ratio_20::vs-reference</td>
+  </tr>
+  
+  <tr>
+    <td>volatility dynamics</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td class="muted">acf_abs_1::vs-reference, acf_abs_20::vs-reference</td>
+  </tr>
+  
+  <tr>
+    <td>leverage asymmetry</td>
+    <td><span class="st FAIL">FAIL</span></td>
+    <td class="muted">leverage::vs-reference</td>
+  </tr>
+  
+  <tr>
+    <td>multiscale behavior</td>
+    <td><span class="st NOT_TESTED">NOT_TESTED</span></td>
+    <td class="muted">no metric in this suite version tests this dimension</td>
+  </tr>
+  
+  <tr>
+    <td>drift nonstationarity</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td class="muted">drift::vs-reference</td>
+  </tr>
+  
+  <tr>
+    <td>regime response</td>
+    <td><span class="st NOT_TESTED">NOT_TESTED</span></td>
+    <td class="muted">no metric in this suite version tests this dimension</td>
+  </tr>
+  
+  <tr>
+    <td>intervention validity</td>
+    <td><span class="st NOT_TESTED">NOT_TESTED</span></td>
+    <td class="muted">no metric in this suite version tests this dimension</td>
+  </tr>
+  
+  <tr>
+    <td>reproducibility provenance</td>
+    <td><span class="st WARN">WARN</span></td>
+    <td class="muted">input manifest missing: git_commit, code_uri</td>
+  </tr>
+  
+</table>
+<p class="muted">Statuses do not average. FAIL on one dimension says nothing
+about the others; NOT_TESTED means exactly that.</p>
+
+<h2>4 · Critical findings</h2>
+
+  
+  <div class="finding">
+    <h3>Hill tail index (left) diverges from the empirical reference <span class="badge">HIGH</span>
+        <span class="badge">DIVERGES_HILL_LEFT</span></h3>
+    <div><b>Observation.</b> Across 6 non-overlapping simulated windows vs 124 reference windows, KS=0.766.</div>
+    <div><b>Interpretation.</b> The simulated distribution of 'Hill tail index (left)' is separated from the empirical reference (KS=0.77, adjusted p=0.003998 at the calibrated line). Note this metric also fails to separate the reference from block_bootstrap, garch_t; treat its pass/fail as one dimension of evidence, not a verdict.</div>
+    <div><b>Impact on claim.</b> Weakens support for claim 'descriptive-market-dynamics' on the dimension 'tail_behavior'. Other dimensions are unaffected by this finding.</div>
+    <div class="muted">Evidence: hill_left::vs-reference · observations.parquet · artifacts/baseline_context.json</div>
+    <div><b>Questions for the author.</b>
+      <ul><li>Did we extract the model output correctly (frequency, units, log vs simple returns)?</li><li>Is matching the empirical distribution of 'Hill tail index (left)' within the intended use of the model?</li><li>Is there a configuration of the model under which this dimension is expected to match, and should we evaluate that configuration instead?</li></ul>
+    </div>
+  </div>
+  
+  <div class="finding">
+    <h3>Leverage correlation diverges from the empirical reference <span class="badge">HIGH</span>
+        <span class="badge">DIVERGES_LEVERAGE</span></h3>
+    <div><b>Observation.</b> Across 6 non-overlapping simulated windows vs 124 reference windows, KS=0.793.</div>
+    <div><b>Interpretation.</b> The simulated distribution of 'Leverage correlation' is separated from the empirical reference (KS=0.79, adjusted p=0.003998 at the calibrated line). Note this metric also fails to separate the reference from block_bootstrap; treat its pass/fail as one dimension of evidence, not a verdict.</div>
+    <div><b>Impact on claim.</b> Weakens support for claim 'descriptive-market-dynamics' on the dimension 'leverage_asymmetry'. Other dimensions are unaffected by this finding.</div>
+    <div class="muted">Evidence: leverage::vs-reference · observations.parquet · artifacts/baseline_context.json</div>
+    <div><b>Questions for the author.</b>
+      <ul><li>Did we extract the model output correctly (frequency, units, log vs simple returns)?</li><li>Is matching the empirical distribution of 'Leverage correlation' within the intended use of the model?</li><li>Is there a configuration of the model under which this dimension is expected to match, and should we evaluate that configuration instead?</li></ul>
+    </div>
+  </div>
+  
+
+
+<h2>5 · Per-metric results</h2>
+<table>
+  <tr><th>Metric</th><th class="num">KS</th><th class="num">p</th>
+      <th class="num">p (adj)</th><th>Status</th><th>Pre-spec</th>
+      <th>Baselines this metric cannot separate</th></tr>
+  
+  
+  <tr>
+    <td><code>excess_kurtosis</code></td>
+    <td class="num">0.656</td>
+    <td class="num">0.0165</td>
+    <td class="num">0.0990</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td><span class="muted">pre-specified</span></td>
+    <td class="muted">block_bootstrap, garch_t</td>
+  </tr>
+  
+  
+  <tr>
+    <td><code>hill_left</code></td>
+    <td class="num">0.766</td>
+    <td class="num">0.0005</td>
+    <td class="num">0.0040</td>
+    <td><span class="st FAIL">FAIL</span></td>
+    <td><span class="muted">pre-specified</span></td>
+    <td class="muted">block_bootstrap, garch_t</td>
+  </tr>
+  
+  
+  <tr>
+    <td><code>hill_right</code></td>
+    <td class="num">0.347</td>
+    <td class="num">0.4583</td>
+    <td class="num">0.9165</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td><span class="muted">pre-specified</span></td>
+    <td class="muted">student_t, iid_bootstrap, block_bootstrap, garch_t</td>
+  </tr>
+  
+  
+  <tr>
+    <td><code>acf_abs_1</code></td>
+    <td class="num">0.578</td>
+    <td class="num">0.0330</td>
+    <td class="num">0.1649</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td><span class="muted">pre-specified</span></td>
+    <td class="muted">block_bootstrap, garch_norm, garch_t</td>
+  </tr>
+  
+  
+  <tr>
+    <td><code>acf_abs_20</code></td>
+    <td class="num">0.532</td>
+    <td class="num">0.0710</td>
+    <td class="num">0.2839</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td><span class="muted">pre-specified</span></td>
+    <td class="muted">garch_norm, garch_t</td>
+  </tr>
+  
+  
+  <tr>
+    <td><code>leverage</code></td>
+    <td class="num">0.793</td>
+    <td class="num">0.0005</td>
+    <td class="num">0.0040</td>
+    <td><span class="st FAIL">FAIL</span></td>
+    <td><span class="muted">pre-specified</span></td>
+    <td class="muted">block_bootstrap</td>
+  </tr>
+  
+  
+  <tr>
+    <td><code>variance_ratio_20</code></td>
+    <td class="num">0.285</td>
+    <td class="num">0.6277</td>
+    <td class="num">0.9165</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td><span class="badge">POST HOC</span>
+        </td>
+    <td class="muted">block_bootstrap</td>
+  </tr>
+  
+  
+  <tr>
+    <td><code>drift</code></td>
+    <td class="num">0.449</td>
+    <td class="num">0.1639</td>
+    <td class="num">0.4918</td>
+    <td><span class="st PASS">PASS</span></td>
+    <td><span class="badge">POST HOC</span>
+        </td>
+    <td class="muted">student_t, iid_bootstrap, block_bootstrap, garch_norm</td>
+  </tr>
+  
+</table>
+
+<h2>6 · What was not tested</h2>
+<ul>
+  <li><b>multiscale behavior</b> — no metric in this suite version tests this dimension</li><li><b>regime response</b> — no metric in this suite version tests this dimension</li><li><b>intervention validity</b> — no metric in this suite version tests this dimension</li>
+  
+  <li>reference and baseline distributions are frozen derived statistics from sieve-bench@8179a586ba5e978d455afe87b054ddd0b4a662ab; raw reference series are not shipped</li><li>multiscale behavior, regime response and intervention validity are not tested by this suite version</li><li>the input series is treated as one stationary sample; no regime segmentation is applied</li>
+</ul>
+
+<h2>7 · Provenance</h2>
+<table>
+  <tr><th>Run</th><td><code>190cc8da045f</code>
+      · sieve 0.1.0</td></tr>
+  <tr><th>Command</th><td><code>sieve test examples/csv_returns --suite financial-daily@1.0 --claim descriptive-market-dynamics</code></td></tr>
+  <tr><th>Master seed</th><td><code>20260802</code>
+      (4 named children recorded)</td></tr>
+  <tr><th>Suite hash</th><td><code>7808f705d610cfde…</code></td></tr>
+  <tr><th>Model source</th><td>git commit not provided
+      · code URI not provided</td></tr>
+  <tr><th>Environment</th><td class="muted">python 3.11.15 · platform Linux-6.18.5-fc-v20-x86_64-with-glibc2.39 · numpy 2.4.6 · pydantic 2.13.4 · scipy 1.17.1 · polars 1.43.2 · </td></tr>
+</table>
+
+<footer>Sieve — every status resolves to test results, versions and caveats. No aggregate score exists.<br>
+Verify this bundle: <code>sieve verify &lt;run-dir&gt;</code></footer>
+</div></body>
+</html>

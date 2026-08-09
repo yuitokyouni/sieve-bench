@@ -1,0 +1,7 @@
+# Hash-sensitive content: suite_hash, dataset content_hash and the artifact
+# hashes in committed evidence bundles are computed over exact file bytes.
+# Line-ending normalization would silently invalidate them on checkout.
+suites/** -text
+tests/golden/fixtures/** -text
+examples/csv_returns/returns.csv -text
+docs/example-run/** -text

@@ -1,0 +1,40 @@
+[
+ {
+  "claim_impact": "Weakens support for claim 'descriptive-market-dynamics' on the dimension 'tail_behavior'. Other dimensions are unaffected by this finding.",
+  "code": "DIVERGES_HILL_LEFT",
+  "evidence_refs": [
+   "hill_left::vs-reference",
+   "observations.parquet",
+   "artifacts/baseline_context.json"
+  ],
+  "finding_id": "F-hill_left",
+  "interpretation": "The simulated distribution of 'Hill tail index (left)' is separated from the empirical reference (KS=0.77, adjusted p=0.003998 at the calibrated line). Note this metric also fails to separate the reference from block_bootstrap, garch_t; treat its pass/fail as one dimension of evidence, not a verdict.",
+  "observation": "Across 6 non-overlapping simulated windows vs 124 reference windows, KS=0.766.",
+  "questions_for_author": [
+   "Did we extract the model output correctly (frequency, units, log vs simple returns)?",
+   "Is matching the empirical distribution of 'Hill tail index (left)' within the intended use of the model?",
+   "Is there a configuration of the model under which this dimension is expected to match, and should we evaluate that configuration instead?"
+  ],
+  "severity": "HIGH",
+  "title": "Hill tail index (left) diverges from the empirical reference"
+ },
+ {
+  "claim_impact": "Weakens support for claim 'descriptive-market-dynamics' on the dimension 'leverage_asymmetry'. Other dimensions are unaffected by this finding.",
+  "code": "DIVERGES_LEVERAGE",
+  "evidence_refs": [
+   "leverage::vs-reference",
+   "observations.parquet",
+   "artifacts/baseline_context.json"
+  ],
+  "finding_id": "F-leverage",
+  "interpretation": "The simulated distribution of 'Leverage correlation' is separated from the empirical reference (KS=0.79, adjusted p=0.003998 at the calibrated line). Note this metric also fails to separate the reference from block_bootstrap; treat its pass/fail as one dimension of evidence, not a verdict.",
+  "observation": "Across 6 non-overlapping simulated windows vs 124 reference windows, KS=0.793.",
+  "questions_for_author": [
+   "Did we extract the model output correctly (frequency, units, log vs simple returns)?",
+   "Is matching the empirical distribution of 'Leverage correlation' within the intended use of the model?",
+   "Is there a configuration of the model under which this dimension is expected to match, and should we evaluate that configuration instead?"
+  ],
+  "severity": "HIGH",
+  "title": "Leverage correlation diverges from the empirical reference"
+ }
+]

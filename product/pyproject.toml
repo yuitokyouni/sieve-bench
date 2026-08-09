@@ -20,6 +20,10 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/yuitokyouni/sieve"
+Research = "https://github.com/yuitokyouni/sieve-bench"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.4"]
 

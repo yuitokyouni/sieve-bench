@@ -1,0 +1,37 @@
+{
+ "acf_abs_1": [
+  "block_bootstrap",
+  "garch_norm",
+  "garch_t"
+ ],
+ "acf_abs_20": [
+  "garch_norm",
+  "garch_t"
+ ],
+ "drift": [
+  "student_t",
+  "iid_bootstrap",
+  "block_bootstrap",
+  "garch_norm"
+ ],
+ "excess_kurtosis": [
+  "block_bootstrap",
+  "garch_t"
+ ],
+ "hill_left": [
+  "block_bootstrap",
+  "garch_t"
+ ],
+ "hill_right": [
+  "student_t",
+  "iid_bootstrap",
+  "block_bootstrap",
+  "garch_t"
+ ],
+ "leverage": [
+  "block_bootstrap"
+ ],
+ "variance_ratio_20": [
+  "block_bootstrap"
+ ]
+}
