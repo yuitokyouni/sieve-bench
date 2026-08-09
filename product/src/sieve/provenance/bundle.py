@@ -2,10 +2,13 @@
 
 Two integrity layers with different scopes, both checked by ``verify``:
 
-1. **Scientific seal** — ``bundle_hash``: SHA-256 of the canonical bundle with
-   volatile fields (IDs, timestamps, artifact index) nulled. Deterministic:
-   same input + suite + seed → same seal, byte for byte. This is the hash to
-   quote in a paper or PR; it pins what was measured, not when or where.
+1. **Scientific seal** — ``bundle_hash``: SHA-256 of the canonical bundle
+   with volatile fields nulled (IDs, timestamps, artifact index, and
+   machine-local facts: platform fingerprint, filesystem paths). It pins WHAT
+   was measured — data content hash, suite hash, claim, seed tree, results —
+   not when or where. Reproduction contract: same input bytes + same suite +
+   same seed + same package versions ⇒ the same seal on any machine. This is
+   the hash to quote; third parties check it by rerunning, not by trusting.
 2. **File integrity** — ``bundle.sha256``: sha256sum-compatible sidecar over
    the written ``evidence_bundle.json`` bytes (which include the artifact
    index), plus per-artifact hashes inside that index. This pins the run

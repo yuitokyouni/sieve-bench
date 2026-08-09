@@ -65,8 +65,14 @@ def test_null_out_excluded_nulls_shape_preserving():
     assert out["artifact_index"] is None
     assert out["run_manifest"]["run_id"] is None
     assert out["run_manifest"]["created_at"] is None
+    assert out["run_manifest"]["command"] is None
+    assert out["run_manifest"]["input_path"] is None
+    assert out["run_manifest"]["environment"] is None
+    assert out["dataset"]["source_uri"] is None
     # untouched fields survive, original is not mutated
     assert out["model"]["model_id"] == "m"
+    assert out["run_manifest"]["master_seed"] == 1
+    assert out["run_manifest"]["input_hash"] == "00"
     assert data["bundle_id"] is not None
 
 
@@ -75,6 +81,25 @@ def test_seal_ignores_volatile_ids():
     assert a.bundle_id != b.bundle_id
     assert hashable_bytes(a) == hashable_bytes(b)
     assert seal(a).bundle_hash == seal(b).bundle_hash
+
+
+def test_seal_ignores_machine_local_facts():
+    """Same content on another machine or path ⇒ same scientific seal."""
+    a, b = mini_bundle(), mini_bundle()
+    b.run_manifest.command = "sieve test /somewhere/else/x.csv --suite s"
+    b.run_manifest.input_path = "/somewhere/else/x.csv"
+    b.run_manifest.environment = {"python": "3.12.1",
+                                  "platform": "Windows-11-AMD64"}
+    b.dataset.source_uri = "C:\\data\\x.csv"
+    assert hashable_bytes(a) == hashable_bytes(b)
+
+
+def test_seal_still_pins_data_and_seed():
+    a, b, c = mini_bundle(), mini_bundle(), mini_bundle()
+    b.run_manifest.input_hash = "ff"          # different data content
+    c.run_manifest.master_seed = 2            # different seed
+    assert hashable_bytes(a) != hashable_bytes(b)
+    assert hashable_bytes(a) != hashable_bytes(c)
 
 
 def test_seal_changes_with_content():

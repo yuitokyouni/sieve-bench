@@ -212,18 +212,30 @@ class EvidenceBundle(_Model):
     bundle_hash: str = ""
 
 
-# Fields excluded from the canonical hash: they vary between otherwise
-# identical runs (spec §16 "except explicitly excluded timestamps/IDs").
-# ``artifact_index`` is excluded because manifest.json and report/index.html
-# legitimately contain the excluded run_id/created_at (and the report embeds
-# bundle_hash itself); their file hashes would smuggle the volatile IDs back
-# into the seal. The artifact index is instead covered by the sidecar hash of
-# the written bundle file (see sieve.provenance.bundle).
+# Fields excluded from the scientific seal (``bundle_hash``). The seal pins
+# WHAT was measured — data identity, suite identity, seed, results — so that
+# an independent rerun of the same content reproduces the same hash. Three
+# kinds of field must therefore stay outside it (they remain in the bundle,
+# protected by the ``bundle.sha256`` file-integrity layer):
+#
+# - per-run identifiers and timestamps (spec §16 "except explicitly excluded
+#   timestamps/IDs");
+# - ``artifact_index``: manifest.json and report/index.html legitimately
+#   contain the excluded run_id/created_at (and the report embeds bundle_hash
+#   itself), so their file hashes would smuggle volatile IDs back in;
+# - machine-local facts: the platform fingerprint, the local filesystem paths
+#   in command/input_path/source_uri. Same CSV bytes on another machine or
+#   under another path is the same science — the data identity in the seal is
+#   ``dataset.content_hash`` / ``run_manifest.input_hash``, never a path.
 HASH_EXCLUDED_PATHS = (
     ("bundle_hash",),
     ("bundle_id",),
     ("created_at",),
     ("run_manifest", "run_id"),
     ("run_manifest", "created_at"),
+    ("run_manifest", "command"),
+    ("run_manifest", "input_path"),
+    ("run_manifest", "environment"),
+    ("dataset", "source_uri"),
     ("artifact_index",),
 )

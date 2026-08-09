@@ -42,6 +42,18 @@ def test_bundle_verifies_intact(run_dir):
     assert verify(run_dir) == []
 
 
+def test_seal_is_path_independent(run_dir, tmp_path):
+    """The same input content in a different location yields the same
+    scientific seal — the reproduction contract for third parties."""
+    elsewhere = tmp_path / "moved" / "input"
+    shutil.copytree(EXAMPLE, elsewhere)
+    other = run_test(elsewhere, SUITE, CLAIM, out_root=tmp_path / "runs")
+    b1 = load(run_dir / "evidence_bundle.json")
+    b2 = load(other / "evidence_bundle.json")
+    assert b1.run_manifest.input_path != b2.run_manifest.input_path
+    assert b1.bundle_hash == b2.bundle_hash
+
+
 def test_deterministic_rerun(run_dir, rerun_dir):
     b1, b2 = load(run_dir / "evidence_bundle.json"), \
              load(rerun_dir / "evidence_bundle.json")
