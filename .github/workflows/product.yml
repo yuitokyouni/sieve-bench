@@ -21,7 +21,9 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: uv pip install --system -e ".[dev]"
+      # setup-uv activates a venv; --system would hit the runner's
+      # externally-managed Debian python (PEP 668)
+      - run: uv pip install -e ".[dev]"
       - run: python -m pytest tests -q
       - name: golden path smoke
         run: |
