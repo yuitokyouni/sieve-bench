@@ -185,8 +185,8 @@ def main():
         ax.set_xlabel("営業日")
     for ax in axes[::3]:
         ax.set_ylabel("累積リターン（標準偏差単位）")
-    fig.suptitle("無較正の世界線 — 論文の公表パラメータのまま各100本（標準化・累積対数リターン）",
-                 fontsize=15)
+    fig.suptitle("無較正の世界線 — 各モデル100本（標準化・累積対数リターン。"
+                 "パラメータの出どころと調整は各パネルの注記）", fontsize=15)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     out = os.path.join(HERE, "worldlines.png")
     fig.savefig(out, dpi=110)
