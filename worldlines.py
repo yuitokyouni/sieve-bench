@@ -9,6 +9,19 @@ v5 の較正済み世界線図（累積の図を人間が見て3つの欠陥を�
     1枚目      6指数の直近1000営業日（各窓の標準偏差で標準化した累積対数リターン）
     2〜6枚目   ABM 100本（標準化・累積）。無較正。
 
+**2箇所だけ、帯の広がりのための開示付き調整を入れてある**（較正ではない。
+どちらもファンダメンタル価格の揺らぎであり、取引ダイナミクスには触れていない）:
+
+  - Chiarella-Iori   sigma_fund 1e-3 → 3e-2（既存パラメータ。ファンダメンタルの
+                     GBM ボラティリティ）。終端の広がり 10.6 → 19.4
+  - Lux-Marchesi     論文設定は pf が定数で、価格がそこへ回帰するため
+                     帯は原理的に開かない（Tf・sigma_mu を振っても 1.3 → 2.3 が限界）。
+                     ファンダメンタルをランダムウォークにした場合の近似として、
+                     リターンに σ = 0.5·std(r) の RW 増分を重畳する。
+                     ミスプライシング動学は相対偏差 (pf−p)/p で定義されているので、
+                     news の時間スケールが回帰より遅い限りこの重畳は良い近似。
+                     終端の広がり 1.3 → 11.9、尖度 9.0 → 8.1
+
 モデルの出どころは2系統ある:
     models/            論文から起こし直した再実装（FW は Table 2 検証済み、CI は未完成）
     financial-abm-lab  旧実装。LM・CB は論文と突き合わせて忠実と確認済み、
@@ -66,9 +79,10 @@ def model_specs():
                   lambda s: FrankeWesterhoffTPA(n_steps=WINDOW, burn_in=1000)
                   .run(seed=s)["returns"]))
 
-    from models.chiarella_iori import ChiarellaIoriPerello
-    specs.append(("Chiarella-Iori", "再実装・未完成・論文パラメータ",
-                  lambda s: ChiarellaIoriPerello(n_steps=WINDOW, warmup=1000)
+    from models.chiarella_iori import ChiarellaIoriPerello, CIParams
+    specs.append(("Chiarella-Iori", "再実装・未完成・論文パラメータ＋sigma_fund 3e-2",
+                  lambda s: ChiarellaIoriPerello(n_steps=WINDOW, warmup=1000,
+                                                 params=CIParams(sigma_fund=3e-2))
                   .run(seed=s)["returns"]))
 
     try:
@@ -80,10 +94,16 @@ def model_specs():
                       f"ABM_LAB が見つからない（{LAB}）", None))
         return specs
 
-    specs.append(("Lux-Marchesi", "lab 実装（忠実と確認済み）・論文 Set I",
-                  lambda s: LuxMarchesi(n_integer_steps=int(WINDOW * 1.25),
-                                        steps_per_unit=100, n_c_init=50,
-                                        params=Params()).run(seed=s)["returns"]))
+    def lm_with_fund_walk(s, q=0.5):
+        """論文 Set I ＋ ファンダメンタル RW の重畳（docstring 参照）。"""
+        r = np.asarray(LuxMarchesi(n_integer_steps=int(WINDOW * 1.25),
+                                   steps_per_unit=100, n_c_init=50,
+                                   params=Params()).run(seed=s)["returns"], float)
+        rng = np.random.default_rng(10**6 + s)
+        return r + rng.normal(0.0, q * r.std(), r.size)
+
+    specs.append(("Lux-Marchesi", "lab 実装（忠実と確認済み）・論文 Set I＋ファンダRW重畳 q=0.5",
+                  lm_with_fund_walk))
     specs.append(("Cont-Bouchaud", "lab 実装（忠実と確認済み）・実装既定値",
                   lambda s: ContBouchaud(N=10000, c=0.9, a=0.01, lam=1.0,
                                          T=int(WINDOW * 1.25),
@@ -113,10 +133,11 @@ def paths_of(build):
     return np.array(out), med
 
 
-def annotate(med, n):
+def annotate(med, n, spread):
     a = (f"尖度 {med['excess_kurtosis']:.1f} / acf|r| {med['acf_abs_1']:.3f}"
          f" / lev {med['leverage']:+.3f}\n"
-         f"VR20 {med['variance_ratio_20']:.2f} / drift {med['drift']:+.4f}")
+         f"VR20 {med['variance_ratio_20']:.2f} / drift {med['drift']:+.4f}"
+         f" / 広がり {spread:.0f}（独立なら {np.sqrt(WINDOW):.0f}）")
     if n < N_PATHS:
         a += f"  （有効 {n}/{N_PATHS} 本）"
     return a
@@ -156,8 +177,8 @@ def main():
         ax.set_title(f"{title}（{len(paths)}本）", fontsize=13)
         ax.text(0.5, 1.0, note, transform=ax.transAxes, ha="center",
                 va="top", fontsize=8.5, color="#666")
-        ax.text(0.02, 0.03, annotate(med, len(paths)), transform=ax.transAxes,
-                fontsize=9.5, color="#3d6a96")
+        ax.text(0.02, 0.03, annotate(med, len(paths), float(np.std(c[:, -1]))),
+                transform=ax.transAxes, fontsize=9.5, color="#3d6a96")
         ax.axhline(0, color="#999", lw=0.5, zorder=0)
 
     for ax in axes[3:]:
