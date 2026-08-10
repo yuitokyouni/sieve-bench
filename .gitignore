@@ -4,6 +4,10 @@ __pycache__/
 # 指数データは同梱しない（再配布しない）。`python3 fetch.py` で各自取得する。
 data/
 
+# 世界線図のパス・キャッシュ（再実行で作り直せる。モデルやパラメータを
+# 変えたら rm -r worldlines_cache/ してから再生成すること）
+worldlines_cache/
+
 # 較正の中間生成物（再実行で作り直せる）
 calibration/*.npy
 calibration/*.png

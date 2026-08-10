@@ -115,20 +115,33 @@ def model_specs():
     return specs
 
 
-def paths_of(build):
-    """有効な（有限・分散非ゼロの）パスだけ標準化して返す。妥当性フィルタは掛けない。"""
-    out, rows = [], []
-    for s in SEEDS:
-        try:
-            r = np.asarray(build(s), dtype=float)
-        except Exception:
-            continue
-        r = r[np.isfinite(r)][-WINDOW:]
-        if r.size < WINDOW or r.std() == 0:
-            continue
-        rn = r / r.std()
-        out.append(rn)
-        rows.append(evaluate(rn))
+CACHE = os.path.join(HERE, "worldlines_cache")
+
+
+def paths_of(build, title):
+    """有効な（有限・分散非ゼロの）パスだけ標準化して返す。妥当性フィルタは掛けない。
+
+    標準化済みパスは worldlines_cache/ に保存し、次回はシミュレーションを
+    飛ばす。**モデルやパラメータを変えたらキャッシュを消すこと**（描画側の
+    変更だけならそのままでよい）。
+    """
+    fn = os.path.join(CACHE, title.replace("/", "_") + ".npy")
+    if os.path.exists(fn):
+        out = [r for r in np.load(fn).astype(float)]
+    else:
+        out = []
+        for s in SEEDS:
+            try:
+                r = np.asarray(build(s), dtype=float)
+            except Exception:
+                continue
+            r = r[np.isfinite(r)][-WINDOW:]
+            if r.size < WINDOW or r.std() == 0:
+                continue
+            out.append(r / r.std())
+        os.makedirs(CACHE, exist_ok=True)
+        np.save(fn, np.array(out, dtype=np.float32))
+    rows = [evaluate(rn) for rn in out]
     med = {k: float(np.nanmedian([x[k] for x in rows])) for k in rows[0]} if rows else {}
     return np.array(out), med
 
@@ -169,7 +182,7 @@ def main():
             ax.set_title(title, fontsize=13)
             continue
         print(f"{title} …", flush=True)
-        paths, med = paths_of(build)
+        paths, med = paths_of(build, title)
         c = paths.cumsum(axis=1)
         for row in c:
             ax.plot(row, color="#3d6a96", alpha=0.06, lw=0.7)
@@ -189,7 +202,7 @@ def main():
                  "パラメータの出どころと調整は各パネルの注記）", fontsize=15)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     out = os.path.join(HERE, "worldlines.png")
-    fig.savefig(out, dpi=110)
+    fig.savefig(out, dpi=200)
     print("→", out)
 
 
